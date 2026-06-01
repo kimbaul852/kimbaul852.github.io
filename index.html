@@ -10,12 +10,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KEYS">
 <meta name="theme-color" content="#0c0a14">
-
-<!-- home-screen icon (replace icon.png with your image; 180×180 recommended) -->
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
-
-<!-- PWA manifest (optional: improves Android/Chrome install behavior) -->
 <link rel="manifest" href="manifest.json">
 
 <title>KEYS — 키보드 피아노</title>
@@ -41,47 +37,39 @@
     color: var(--ink);
     font-family: 'Bricolage Grotesque', sans-serif;
     overflow: hidden;
-    -webkit-user-select: none;
-    user-select: none;
+    -webkit-user-select: none; user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
-
   body {
     background:
       radial-gradient(900px 500px at 20% -10%, rgba(255,174,59,0.10), transparent 60%),
       radial-gradient(800px 600px at 90% 110%, rgba(75,227,210,0.10), transparent 60%),
       var(--bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
     gap: 14px;
-    /* base padding + iOS safe-area insets (notch / home indicator) */
     padding:
-      max(18px, env(safe-area-inset-top))
-      max(18px, env(safe-area-inset-right))
-      max(18px, env(safe-area-inset-bottom))
-      max(18px, env(safe-area-inset-left));
+      max(16px, env(safe-area-inset-top))
+      max(16px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
   }
 
   #capture {
-    position: absolute;
-    top: 0; left: 0;
-    width: 1px; height: 1px;
-    opacity: 0.001;
+    position: absolute; top: 0; left: 0;
+    width: 1px; height: 1px; opacity: 0.001;
     border: none; background: transparent; color: transparent;
-    font-size: 16px; caret-color: transparent;
-    pointer-events: none;
+    font-size: 16px; caret-color: transparent; pointer-events: none;
   }
 
   header {
-    width: min(1040px, 96vw);
+    width: min(1100px, 97vw);
     display: flex; align-items: flex-end;
-    justify-content: space-between; gap: 20px;
+    justify-content: space-between; gap: 18px;
   }
   .title { line-height: 0.85; }
   .title h1 {
-    font-size: clamp(30px, 6.5vw, 68px);
+    font-size: clamp(28px, 6vw, 64px);
     font-weight: 800; letter-spacing: -0.04em;
     background: linear-gradient(100deg, var(--amber), var(--magenta) 55%, var(--cyan));
     -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -93,18 +81,17 @@
     color: var(--dim); text-transform: uppercase;
   }
 
-  .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; align-items: flex-end; }
+  .controls { display: flex; gap: 9px; flex-wrap: wrap; justify-content: flex-end; align-items: flex-end; }
   .ctl {
     background: var(--panel);
     border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 12px;
-    padding: 8px 12px;
+    border-radius: 12px; padding: 8px 11px;
     display: flex; flex-direction: column; gap: 4px;
-    min-width: 104px;
+    min-width: 96px;
   }
   .ctl label {
     font-family: 'Space Mono', monospace;
-    font-size: 9px; letter-spacing: 0.14em;
+    font-size: 9px; letter-spacing: 0.12em;
     color: var(--dim); text-transform: uppercase;
   }
   .ctl .row { display: flex; align-items: center; gap: 6px; }
@@ -112,17 +99,15 @@
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.08);
     color: var(--ink);
-    width: 22px; height: 22px;
-    border-radius: 6px; cursor: pointer;
-    font-size: 13px; line-height: 1;
+    width: 22px; height: 22px; border-radius: 6px; cursor: pointer;
+    font-size: 13px; line-height: 1; flex: none;
     transition: background 0.12s, transform 0.06s;
-    flex: none;
   }
   .ctl button:active { transform: scale(0.9); }
   .ctl .val {
     flex: 1; text-align: center;
     font-family: 'Space Mono', monospace;
-    font-size: 13px; font-weight: 700; color: var(--amber);
+    font-size: 12px; font-weight: 700; color: var(--amber);
     white-space: nowrap;
   }
   .ctl .val.cyan { color: var(--cyan); }
@@ -134,38 +119,23 @@
     border-radius: 6px; overflow: hidden;
   }
   .seg button {
-    border: none; border-radius: 0;
-    width: auto; height: 22px; padding: 0 8px;
-    font-family: 'Space Mono', monospace;
-    font-size: 9px; color: var(--dim);
+    border: none; border-radius: 0; width: auto; height: 22px; padding: 0 8px;
+    font-family: 'Space Mono', monospace; font-size: 9px; color: var(--dim); cursor: pointer;
   }
   .seg button.on { background: var(--cyan); color: #06120f; font-weight: 700; }
-
-  .keysbtn {
-    background: var(--panel);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    padding: 0 14px; height: 56px;
-    color: var(--ink); cursor: pointer;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px; letter-spacing: 0.1em;
-    display: flex; align-items: center; gap: 7px;
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .keysbtn:hover { border-color: rgba(255,174,59,0.5); }
-  .keysbtn svg { width: 14px; height: 14px; }
+  .seg.mag button.on { background: var(--magenta); color: #2a0010; }
 
   .modebar {
-    width: min(1040px, 96vw);
+    width: min(1100px, 97vw);
     display: flex; align-items: center;
     justify-content: space-between; gap: 12px; flex-wrap: wrap;
   }
+  .leftgroup { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
   .armbtn {
     display: inline-flex; align-items: center; gap: 10px;
     background: var(--panel);
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 999px;
-    padding: 9px 16px;
+    border-radius: 999px; padding: 9px 16px;
     font-family: 'Space Mono', monospace;
     font-size: 11px; letter-spacing: 0.06em;
     color: var(--ink); cursor: pointer;
@@ -182,39 +152,81 @@
   .armbtn .lbl::after { content: '키보드 입력 OFF · 탭해서 켜기'; }
   .armbtn.armed .lbl::after { content: '키보드 입력 ON · 탭해서 끄기'; }
 
+  .modetoggle {
+    display: flex;
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px; overflow: hidden;
+  }
+  .modetoggle button {
+    border: none; background: transparent;
+    color: var(--dim); cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; letter-spacing: 0.08em;
+    padding: 9px 15px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .modetoggle button.on { background: var(--amber); color: #2a1800; font-weight: 700; }
+
   .hint {
     font-family: 'Space Mono', monospace;
     font-size: 10px; color: var(--dim);
-    letter-spacing: 0.06em; text-align: right;
+    letter-spacing: 0.05em; text-align: right; line-height: 1.7;
   }
   .hint b { color: var(--cyan); }
+  .hint .mag { color: var(--magenta); }
+  .hint .amb { color: var(--amber); }
 
   .stage {
-    width: min(1040px, 96vw);
+    width: min(1100px, 97vw);
     background: linear-gradient(180deg, #1c1828, #110e1a);
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 20px;
-    padding: 18px 18px 22px;
+    padding: 16px;
     box-shadow: 0 30px 70px -30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05);
+    display: flex; flex-direction: column; gap: 14px;
   }
   .feltbar {
-    height: 8px; border-radius: 4px; margin-bottom: 14px;
+    height: 7px; border-radius: 4px;
     background: linear-gradient(90deg, var(--amber), var(--magenta), var(--cyan));
     opacity: 0.85;
   }
-  .piano { position: relative; display: flex; height: clamp(160px, 28vw, 240px); touch-action: none; }
+
+  .rowwrap { display: flex; flex-direction: column; gap: 6px; }
+  .rowtag {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px; letter-spacing: 0.14em;
+    color: var(--dim); text-transform: uppercase;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .rowtag .badge {
+    padding: 1px 7px; border-radius: 5px;
+    font-weight: 700;
+  }
+  .rowtag .badge.lower { background: rgba(75,227,210,0.15); color: var(--cyan); }
+  .rowtag .badge.upper { background: rgba(255,93,143,0.15); color: var(--magenta); }
+
+  .piano {
+    position: relative; display: flex;
+    touch-action: none;
+  }
+  /* single mode: tall. extended mode: each row shorter */
+  body[data-mode="basic"] .piano { height: clamp(150px, 26vw, 230px); }
+  body[data-mode="extended"] .piano { height: clamp(96px, 16vw, 150px); }
+
   .key { position: relative; cursor: pointer; transition: transform 0.04s ease; }
   .white {
     flex: 1;
     background: linear-gradient(180deg, #fbf9ff 0%, #e3dff0 92%, #cbc6dd 100%);
     border: 1px solid #b9b3cc;
-    border-radius: 0 0 8px 8px;
-    margin: 0 1.5px;
+    border-left: none;
+    border-radius: 0 0 7px 7px;
     box-shadow: inset 0 -6px 10px -6px rgba(0,0,0,0.25);
     display: flex; flex-direction: column;
     justify-content: flex-end; align-items: center;
-    padding-bottom: 12px;
+    padding-bottom: 9px;
   }
+  .white:first-child { border-left: 1px solid #b9b3cc; }
   .white.down {
     background: linear-gradient(180deg, #ffe6b8 0%, #ffcf86 100%);
     transform: translateY(3px);
@@ -222,132 +234,101 @@
   }
   .black {
     position: absolute; top: 0;
-    width: 5.6%; height: 62%;
+    width: 5.6%; height: 60%;
     background: linear-gradient(180deg, #2a2636 0%, #0c0a12 100%);
     border: 1px solid #000;
-    border-radius: 0 0 6px 6px;
-    z-index: 2;
+    border-radius: 0 0 5px 5px; z-index: 2;
     box-shadow: 0 6px 10px -2px rgba(0,0,0,0.7), inset 0 -4px 6px -4px rgba(255,255,255,0.15);
     display: flex; flex-direction: column;
     justify-content: flex-end; align-items: center;
-    padding-bottom: 8px;
+    padding-bottom: 6px;
   }
   .black.down {
     background: linear-gradient(180deg, #b8842a 0%, #6e4e12 100%);
-    transform: translateY(3px); height: 60%;
+    transform: translateY(3px); height: 58%;
   }
-  .black.nokey { opacity: 0.82; }
-  .klabel { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; }
+  .black.nokey { opacity: 0.8; }
+  .klabel { font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700; }
   .white .klabel { color: #8c86a0; }
   .white.down .klabel { color: #7a4e00; }
-  .black .klabel { color: #c9c3da; font-size: 9px; }
+  .black .klabel { color: #c9c3da; font-size: 8px; }
   .black.down .klabel { color: #1a1208; }
-  .nlabel { font-family: 'Space Mono', monospace; font-size: 8px; margin-top: 2px; }
+  .nlabel { font-family: 'Space Mono', monospace; font-size: 7px; margin-top: 2px; }
   .white .nlabel { color: #a39db8; }
-  .black .nlabel { display: block; color: #8e88a4; font-size: 7px; }
+  .black .nlabel { display: block; color: #8e88a4; font-size: 6px; }
 
-  /* ---------- key-binding modal ---------- */
+  /* hide the lower-row tag/labels cleanly in basic mode */
+  body[data-mode="basic"] #rowUpperWrap { display: none; }
+  body[data-mode="basic"] .rowtag { display: none; }
+
+  /* ---------- modal (shortcuts) ---------- */
   .overlay {
     position: fixed; inset: 0;
-    background: rgba(6,5,12,0.78);
-    backdrop-filter: blur(4px);
-    display: none;
-    align-items: center; justify-content: center;
+    background: rgba(6,5,12,0.78); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center;
     padding: 20px; z-index: 50;
   }
   .overlay.show { display: flex; }
   .modal {
-    width: min(560px, 96vw);
-    max-height: 88vh; overflow-y: auto;
+    width: min(560px, 96vw); max-height: 88vh; overflow-y: auto;
     background: var(--panel2);
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 18px;
-    padding: 22px;
+    border-radius: 18px; padding: 22px;
   }
-  .modal h2 {
-    font-size: 22px; font-weight: 800; letter-spacing: -0.02em;
-    margin-bottom: 4px;
-  }
+  .modal h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
   .modal .sub {
-    font-family: 'Space Mono', monospace;
-    font-size: 10px; color: var(--dim);
-    letter-spacing: 0.08em; margin-bottom: 16px;
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--dim); letter-spacing: 0.08em; margin-bottom: 16px;
   }
   .bindrow {
     display: flex; align-items: center; gap: 12px;
-    padding: 11px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
   }
   .bindrow:last-of-type { border-bottom: none; }
   .bindinfo { flex: 1; min-width: 0; }
-  .bindinfo .bn {
-    font-size: 14px; font-weight: 700;
-  }
-  .bindinfo .bd {
-    font-family: 'Space Mono', monospace;
-    font-size: 9.5px; color: var(--dim);
-    margin-top: 2px;
-  }
+  .bindinfo .bn { font-size: 14px; font-weight: 700; }
+  .bindinfo .bd { font-family: 'Space Mono', monospace; font-size: 9.5px; color: var(--dim); margin-top: 2px; }
   .bindkeys { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
   .kcap {
-    min-width: 34px; height: 30px;
-    padding: 0 8px;
+    min-width: 34px; height: 30px; padding: 0 8px;
     background: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 7px;
-    font-family: 'Space Mono', monospace;
-    font-size: 12px; font-weight: 700;
+    font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700;
     color: var(--ink); cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: all 0.12s;
   }
   .kcap:hover { border-color: rgba(255,174,59,0.6); }
-  .kcap.listening {
-    border-color: var(--amber);
-    background: rgba(255,174,59,0.18);
-    color: var(--amber);
-    animation: pulse 1s infinite;
-  }
+  .kcap.listening { border-color: var(--amber); background: rgba(255,174,59,0.18); color: var(--amber); animation: pulse 1s infinite; }
   @keyframes pulse { 50% { opacity: 0.5; } }
-  .kcap.fixed {
-    cursor: not-allowed; opacity: 0.55;
-    border-style: dashed;
-  }
-  .modal .foot {
-    display: flex; gap: 10px; margin-top: 18px;
-  }
+  .modal .foot { display: flex; gap: 10px; margin-top: 18px; }
   .modal .foot button {
-    flex: 1; height: 40px;
-    border-radius: 10px; cursor: pointer;
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 13px; font-weight: 700;
+    flex: 1; height: 40px; border-radius: 10px; cursor: pointer;
+    font-family: 'Bricolage Grotesque', sans-serif; font-size: 13px; font-weight: 700;
     border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.05);
-    color: var(--ink);
-    transition: background 0.12s;
+    background: rgba(255,255,255,0.05); color: var(--ink);
   }
-  .modal .foot button.primary {
-    background: var(--amber); color: #2a1800; border-color: var(--amber);
+  .modal .foot button.primary { background: var(--amber); color: #2a1800; border-color: var(--amber); }
+  .modal .warn { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--magenta); margin-top: 10px; min-height: 14px; }
+  .modal .note { font-family: 'Space Mono', monospace; font-size: 9.5px; color: var(--dim); margin-top: 14px; line-height: 1.6; }
+  .keysbtn {
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 0 13px; height: 54px;
+    color: var(--ink); cursor: pointer;
+    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.1em;
+    display: flex; align-items: center; gap: 7px;
   }
-  .modal .warn {
-    font-family: 'Space Mono', monospace;
-    font-size: 10px; color: var(--magenta);
-    margin-top: 10px; min-height: 14px;
-  }
-  .modal .note {
-    font-family: 'Space Mono', monospace;
-    font-size: 9.5px; color: var(--dim);
-    margin-top: 14px; line-height: 1.6;
-  }
+  .keysbtn:hover { border-color: rgba(255,174,59,0.5); }
 
-  @media (max-width: 620px) {
+  @media (max-width: 640px) {
     .controls { width: 100%; }
-    .klabel { font-size: 9px; }
     .hint { text-align: left; }
   }
 </style>
 </head>
-<body>
+<body data-mode="basic">
 
 <input id="capture" type="text" inputmode="text"
        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -357,75 +338,44 @@
     <h1>KEYS</h1>
     <p>type to play · keyboard piano</p>
   </div>
-  <div class="controls">
-    <div class="ctl">
-      <label>Octave</label>
-      <div class="row">
-        <button id="octDown">−</button>
-        <span class="val" id="octVal">±0</span>
-        <button id="octUp">+</button>
-      </div>
-    </div>
-    <div class="ctl">
-      <label>Shift Window</label>
-      <div class="row">
-        <button id="winDown">−</button>
-        <span class="val cyan" id="winVal">A = C4</span>
-        <button id="winUp">+</button>
-      </div>
-    </div>
-    <div class="ctl">
-      <label>Transpose</label>
-      <div class="row">
-        <button id="trDown">−</button>
-        <span class="val mag" id="trVal">0</span>
-        <button id="trUp">+</button>
-      </div>
-    </div>
-    <div class="ctl">
-      <label>Volume</label>
-      <div class="row">
-        <button id="volDown">−</button>
-        <span class="val" id="volVal">70</span>
-        <button id="volUp">+</button>
-      </div>
-    </div>
-    <div class="ctl">
-      <label>Tone</label>
-      <div class="seg" id="toneSeg">
-        <button data-tone="grand" class="on">GRAND</button>
-        <button data-tone="electric">ELEC</button>
-        <button data-tone="synth">SYNTH</button>
-      </div>
-    </div>
-    <button class="keysbtn" id="openKeys">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="2" y="6" width="20" height="12" rx="2"/>
-        <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
-      </svg>
-      단축키
-    </button>
-  </div>
+  <div class="controls" id="controls"><!-- mode-specific controls injected here --></div>
 </header>
 
 <div class="modebar">
-  <button class="armbtn" id="armBtn">
-    <span class="dot"></span>
-    <span class="lbl"></span>
-  </button>
+  <div class="leftgroup">
+    <button class="armbtn" id="armBtn"><span class="dot"></span><span class="lbl"></span></button>
+    <div class="modetoggle" id="modeToggle">
+      <button data-mode="basic" class="on">기본</button>
+      <button data-mode="extended">확장 2줄</button>
+    </div>
+    <button class="keysbtn" id="openKeys">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
+      </svg>단축키
+    </button>
+  </div>
   <div class="hint" id="hintText"></div>
 </div>
 
 <div class="stage">
   <div class="feltbar"></div>
-  <div class="piano" id="piano"></div>
+  <!-- upper row (extended only) -->
+  <div class="rowwrap" id="rowUpperWrap">
+    <div class="rowtag"><span class="badge upper">위 / UPPER</span><span id="upperInfo"></span></div>
+    <div class="piano" id="pianoUpper"></div>
+  </div>
+  <!-- lower row (always present; in basic mode this is THE piano) -->
+  <div class="rowwrap" id="rowLowerWrap">
+    <div class="rowtag"><span class="badge lower">아래 / LOWER</span><span id="lowerInfo"></span></div>
+    <div class="piano" id="pianoLower"></div>
+  </div>
 </div>
 
-<!-- key binding modal -->
+<!-- shortcuts modal -->
 <div class="overlay" id="overlay">
   <div class="modal">
     <h2>단축키 설정</h2>
-    <div class="sub">블루투스 키보드 기준 · 키 캡을 누른 뒤 원하는 키를 누르세요</div>
+    <div class="sub">기능 키 캡을 누른 뒤 원하는 키를 누르세요 · 연주 건반은 고정</div>
     <div id="bindList"></div>
     <div class="warn" id="bindWarn"></div>
     <div class="note" id="bindNote"></div>
@@ -438,63 +388,51 @@
 
 <script>
 (() => {
+  // ============ music theory base ============
   const NAMES   = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
   const IS_WHITE = [true,false,true,false,true,true,false,true,false,true,false,true];
-
-  const MIN_MIDI = 24, MAX_MIDI = 108;
+  const MIN_MIDI = 12, MAX_MIDI = 120;
   const allWhite = [];
   for (let m = MIN_MIDI; m <= MAX_MIDI; m++) if (IS_WHITE[m % 12]) allWhite.push(m);
+  const nameOf = m => NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
 
-  // ----- play keys: fixed home-position layout -----
-  const WHITE_KEYS = ['a','s','d','f','g','h','j','k','l',';'];
-  // black-key shortcuts are tied to WHITE-KEY GAPS, mirroring physical QWERTY:
-  // gap 0 = A·S, gap 1 = S·D, gap 2 = D·F, ... gap 8 = L·;
-  // W E R T Y U I O P sit physically above those gaps.
-  const GAP_KEYS = ['w','e','r','t','y','u','i','o','p'];   // index = white-key gap
-  const WHITE_COUNT = WHITE_KEYS.length;
-  const PLAY_KEYS = new Set([...WHITE_KEYS, ...GAP_KEYS]);
-
-  // ----- function bindings: editable -----
-  // each function -> array of keys. 'shift' is a special modifier name.
-  const DEFAULT_BINDINGS = {
-    octDown:   ['z'],
-    octUp:     ['x'],
-    winDown:   [','],
-    winUp:     ['.'],
-    trDown:    ['['],
-    trUp:      [']'],
-    volDown:   ['-'],
-    volUp:     ['='],
-    toneGrand: ['1'],
-    toneElec:  ['2'],
-    toneSynth: ['3'],
-    sustain:   ['shift']
-  };
-  const BIND_META = {
-    octDown:   { name: '옥타브 −',        desc: '한 옥타브 아래로 점프' },
-    octUp:     { name: '옥타브 +',        desc: '한 옥타브 위로 점프' },
-    winDown:   { name: '창 왼쪽 이동',    desc: '흰건반 한 칸 ←' },
-    winUp:     { name: '창 오른쪽 이동',  desc: '흰건반 한 칸 →' },
-    trDown:    { name: '트랜스포즈 −',    desc: '반음 내림' },
-    trUp:      { name: '트랜스포즈 +',    desc: '반음 올림' },
-    volDown:   { name: '볼륨 −',          desc: '소리 작게' },
-    volUp:     { name: '볼륨 +',          desc: '소리 크게' },
-    toneGrand: { name: '음색: GRAND',     desc: '어쿠스틱 피아노' },
-    toneElec:  { name: '음색: ELEC',      desc: '일렉트릭 피아노' },
-    toneSynth: { name: '음색: SYNTH',     desc: '신스' },
-    sustain:   { name: '서스테인',        desc: '누르는 동안 음 지속' }
-  };
-  let bindings = JSON.parse(JSON.stringify(DEFAULT_BINDINGS));
-
-  // ----- state -----
+  // ============ audio ============
   let actx = null, masterGain = null;
-  let volume = 0.7, tone = 'grand', sustain = false;
-  let windowStart = allWhite.indexOf(60);
-  if (windowStart < 0) windowStart = 0;
-  let transpose = 0;
-  const active = new Map();
+  let volume = 0.7, tone = 'grand';
+  let sustain = false;
+  const active = new Map();   // soundMidi -> voice
 
-  // ----- audio -----
+  // ---- pitch bend ----
+  // bendCents: current global bend in cents (100 cents = 1 semitone).
+  // bendTarget: where we're ramping to. We glide between them for a "bending" feel.
+  let bendCents = 0;
+  const BEND_RANGE = 100;        // semitone, in cents
+  const BEND_GLIDE = 0.12;       // seconds to reach full bend / to return
+  let bendDir = 0;               // -1 down, +1 up, 0 none
+
+  function applyBend(targetCents, glide) {
+    bendCents = targetCents;
+    if (!actx) return;
+    const now = actx.currentTime;
+    active.forEach(v => {
+      v.oscs.forEach(o => {
+        o.detune.cancelScheduledValues(now);
+        o.detune.setValueAtTime(o.detune.value, now);
+        o.detune.linearRampToValueAtTime(o.baseDetune + targetCents, now + glide);
+      });
+    });
+  }
+  function bendStart(dir) {
+    if (bendDir === dir) return;
+    bendDir = dir;
+    applyBend(dir * BEND_RANGE, BEND_GLIDE);
+  }
+  function bendRelease(dir) {
+    if (bendDir !== dir) return;   // ignore release of a direction we're not bending
+    bendDir = 0;
+    applyBend(0, BEND_GLIDE);
+  }
+
   function ensureAudio() {
     if (actx) return;
     actx = new (window.AudioContext || window.webkitAudioContext)();
@@ -503,200 +441,441 @@
     const comp = actx.createDynamicsCompressor();
     masterGain.connect(comp); comp.connect(actx.destination);
   }
-  function freqForMidi(m) { return 440 * Math.pow(2, (m - 69) / 12); }
   const TONES = {
     grand:    {types:['triangle','sine'],   mix:[0.7,0.3], decay:1.8, attack:0.006},
     electric: {types:['sine','sine'],       mix:[0.8,0.4], decay:2.6, attack:0.004, detune:6},
     synth:    {types:['sawtooth','square'], mix:[0.5,0.25],decay:0.9, attack:0.012}
   };
-  function noteOn(keyMidi) {
-    const sound = keyMidi + transpose;
-    if (active.has(sound)) return;
+  const f2 = m => 440 * Math.pow(2, (m - 69) / 12);
+  function audioOn(soundMidi) {
+    if (active.has(soundMidi)) return;
     ensureAudio();
     if (actx.state === 'suspended') actx.resume();
-    const cfg = TONES[tone], f = freqForMidi(sound), now = actx.currentTime;
-    const gain = actx.createGain();
-    gain.connect(masterGain);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.9, now + cfg.attack);
-    gain.gain.exponentialRampToValueAtTime(0.18, now + cfg.decay);
+    const cfg = TONES[tone], now = actx.currentTime;
+    const g = actx.createGain(); g.connect(masterGain);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.9, now + cfg.attack);
+    g.gain.exponentialRampToValueAtTime(0.18, now + cfg.decay);
     const oscs = [];
     cfg.types.forEach((t, i) => {
-      const osc = actx.createOscillator();
-      osc.type = t; osc.frequency.value = f;
-      if (cfg.detune) osc.detune.value = (i ? cfg.detune : -cfg.detune);
-      const og = actx.createGain();
-      og.gain.value = cfg.mix[i];
-      osc.connect(og); og.connect(gain);
-      osc.start(now); oscs.push(osc);
+      const o = actx.createOscillator();
+      o.type = t; o.frequency.value = f2(soundMidi);
+      // remember the timbre detune separately from the pitch-bend offset
+      o.baseDetune = cfg.detune ? (i ? cfg.detune : -cfg.detune) : 0;
+      o.detune.value = o.baseDetune + bendCents;   // apply current bend at note-on
+      const og = actx.createGain(); og.gain.value = cfg.mix[i];
+      o.connect(og); og.connect(g); o.start(now); oscs.push(o);
     });
-    active.set(sound, {oscs, gain});
+    active.set(soundMidi, {oscs, g});
   }
-  function noteOff(keyMidi) {
-    const sound = keyMidi + transpose;
-    const v = active.get(sound);
+  function audioOff(soundMidi) {
+    const v = active.get(soundMidi);
     if (!v) return;
-    active.delete(sound);
-    const release = sustain ? 1.4 : 0.28;
-    const now = actx.currentTime, g = v.gain.gain;
-    g.cancelScheduledValues(now);
-    g.setValueAtTime(Math.max(g.value, 0.0001), now);
-    g.exponentialRampToValueAtTime(0.0001, now + release);
-    v.oscs.forEach(o => o.stop(now + release + 0.05));
+    active.delete(soundMidi);
+    const rel = sustain ? 1.4 : 0.28, now = actx.currentTime, gg = v.g.gain;
+    gg.cancelScheduledValues(now);
+    gg.setValueAtTime(Math.max(gg.value, 0.0001), now);
+    gg.exponentialRampToValueAtTime(0.0001, now + rel);
+    v.oscs.forEach(o => o.stop(now + rel + 0.05));
   }
-  function nameOf(m) { return NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1); }
 
-  // ----- build window -----
-  const piano = document.getElementById('piano');
-  const elByMidi = {};
-  const keyByChar = {};   // play-key char -> keyMidi
+  // ============ Piano object ============
+  // Each piano owns: a key-row layout, a window start (into allWhite),
+  // a transpose, its DOM container, and its char->keyMidi map.
+  function makePiano(opts) {
+    const P = {
+      el: opts.el,
+      whiteKeys: opts.whiteKeys,   // 10 chars
+      gapKeys: opts.gapKeys,       // 9 chars (between white i and i+1)
+      color: opts.color,           // 'lower' | 'upper'
+      infoEl: opts.infoEl,
+      windowStart: allWhite.indexOf(opts.startMidi),
+      transpose: 0,
+      keyByChar: {},               // play char -> keyMidi (visual midi, pre-transpose)
+      elByMidi: {},                // keyMidi -> element
+      held: new Set()
+    };
+    if (P.windowStart < 0) P.windowStart = allWhite.indexOf(60);
+    const WC = P.whiteKeys.length;
 
-  function buildWindow() {
-    piano.innerHTML = '';
-    for (const k in elByMidi) delete elByMidi[k];
-    for (const k in keyByChar) delete keyByChar[k];
+    P.soundMidi = keyMidi => keyMidi + P.transpose;
 
-    const whites = [];
-    for (let i = 0; i < WHITE_COUNT; i++) {
-      const idx = windowStart + i;
-      if (idx < allWhite.length) whites.push(allWhite[idx]);
-    }
-    whites.forEach((midi, i) => {
-      const el = document.createElement('div');
-      el.className = 'key white';
-      const ch = WHITE_KEYS[i];
-      keyByChar[ch] = midi;
-      el.innerHTML = `<span class="klabel">${ch.toUpperCase()}</span>
-                      <span class="nlabel">${nameOf(midi + transpose)}</span>`;
-      bindPointer(el, midi);
-      piano.appendChild(el);
-      elByMidi[midi] = el;
-    });
-    // black keys: a black key exists in the GAP between two adjacent white keys
-    // only when they are 2 semitones apart. The shortcut for that black key is
-    // tied to the WHITE-KEY GAP (gap i = between white shortcut i and i+1),
-    // NOT to a running count of black keys. This keeps W=A·S gap, E=S·D gap, etc.
-    // GAP_KEYS[i] = black-key shortcut sitting in gap i (between white i and i+1).
-    // gaps with no possible black key on a piano are left empty.
-    const blackSlots = [];
-    for (let i = 0; i < whites.length - 1; i++) {
-      if (whites[i + 1] - whites[i] === 2)
-        blackSlots.push({ midi: whites[i] + 1, gapIndex: i });
-    }
-    const unit = 100 / WHITE_COUNT;
-    blackSlots.forEach(slot => {
-      const el = document.createElement('div');
-      el.className = 'key black';
-      el.style.left = ((slot.gapIndex + 1) * unit - 2.8) + '%';
-      // shortcut is determined by WHICH GAP this black key sits in
-      const ch = GAP_KEYS[slot.gapIndex];
-      if (ch) {
-        keyByChar[ch] = slot.midi;
-        el.innerHTML = `<span class="klabel">${ch.toUpperCase()}</span>
-                        <span class="nlabel">${nameOf(slot.midi + transpose)}</span>`;
-      } else {
-        el.classList.add('nokey');
-        el.innerHTML = `<span class="klabel"></span>
-                        <span class="nlabel">${nameOf(slot.midi + transpose)}</span>`;
+    P.build = function () {
+      P.el.innerHTML = '';
+      P.keyByChar = {}; P.elByMidi = {};
+      const whites = [];
+      for (let i = 0; i < WC; i++) {
+        const idx = P.windowStart + i;
+        if (idx < allWhite.length) whites.push(allWhite[idx]);
       }
-      bindPointer(el, slot.midi);
-      piano.appendChild(el);
-      elByMidi[slot.midi] = el;
-    });
-    document.getElementById('winVal').textContent = 'A = ' + nameOf(whites[0]);
-    // octave readout: how many full octaves from the C4 home position
-    const homeIdx = allWhite.indexOf(60);
-    const octShift = Math.round((windowStart - homeIdx) / 7);
-    document.getElementById('octVal').textContent =
-      octShift > 0 ? '+' + octShift : (octShift < 0 ? '' + octShift : '±0');
+      // white keys
+      whites.forEach((midi, i) => {
+        const el = document.createElement('div');
+        el.className = 'key white';
+        const ch = P.whiteKeys[i];
+        P.keyByChar[ch] = midi;
+        el.innerHTML = `<span class="klabel">${capLabel(ch)}</span>
+                        <span class="nlabel">${nameOf(midi + P.transpose)}</span>`;
+        bindPointer(P, el, midi);
+        P.el.appendChild(el);
+        P.elByMidi[midi] = el;
+      });
+      // black keys: in the GAP between white i and i+1 when 2 semitones apart.
+      // shortcut is tied to the gap index (gapKeys[gapIndex]).
+      const unit = 100 / WC;
+      for (let i = 0; i < whites.length - 1; i++) {
+        if (whites[i + 1] - whites[i] !== 2) continue;
+        const midi = whites[i] + 1;
+        const el = document.createElement('div');
+        el.className = 'key black';
+        el.style.left = 'calc(' + ((i + 1) * unit) + '% - 2.8%)';
+        const ch = P.gapKeys[i];
+        if (ch) {
+          P.keyByChar[ch] = midi;
+          el.innerHTML = `<span class="klabel">${capLabel(ch)}</span>
+                          <span class="nlabel">${nameOf(midi + P.transpose)}</span>`;
+        } else {
+          el.classList.add('nokey');
+          el.innerHTML = `<span class="klabel"></span>
+                          <span class="nlabel">${nameOf(midi + P.transpose)}</span>`;
+        }
+        bindPointer(P, el, midi);
+        P.el.appendChild(el);
+        P.elByMidi[midi] = el;
+      }
+      // info readout
+      if (P.infoEl) {
+        const a = nameOf(whites[0] + P.transpose);
+        const tr = P.transpose ? (P.transpose > 0 ? ' +' + P.transpose : ' ' + P.transpose) : '';
+        P.infoEl.textContent = (P.whiteKeys[0].toUpperCase()) + ' = ' + a + tr;
+      }
+    };
+
+    P.releaseHeld = function () {
+      P.held.forEach(ch => {
+        const m = P.keyByChar[ch];
+        if (m != null) { audioOff(P.soundMidi(m)); P.elByMidi[m]?.classList.remove('down'); }
+      });
+      P.held.clear();
+    };
+    P.shift = function (d) {
+      const maxStart = allWhite.length - WC;
+      const next = Math.max(0, Math.min(maxStart, P.windowStart + d));
+      if (next === P.windowStart) return;
+      P.releaseHeld(); P.windowStart = next; P.build();
+    };
+    P.setTranspose = function (t) {
+      const next = Math.max(-24, Math.min(24, t));
+      if (next === P.transpose) return;
+      P.releaseHeld(); P.transpose = next; P.build();
+    };
+    // press/release by play-char
+    P.pressChar = function (ch) {
+      if (P.held.has(ch)) return false;
+      const m = P.keyByChar[ch];
+      if (m == null) return false;
+      P.held.add(ch);
+      audioOn(P.soundMidi(m));
+      P.elByMidi[m]?.classList.add('down');
+      return true;
+    };
+    P.releaseChar = function (ch) {
+      if (!P.held.has(ch)) return false;
+      P.held.delete(ch);
+      const m = P.keyByChar[ch];
+      if (m != null) { audioOff(P.soundMidi(m)); P.elByMidi[m]?.classList.remove('down'); }
+      return true;
+    };
+    return P;
   }
-  function visualOn(m)  { elByMidi[m]?.classList.add('down'); }
-  function visualOff(m) { elByMidi[m]?.classList.remove('down'); }
-  function bindPointer(el, keyMidi) {
+
+  function capLabel(ch) {
+    if (ch === ';') return ';';
+    if (ch === ',') return ','; if (ch === '.') return '.'; if (ch === '/') return '/';
+    return ch.toUpperCase();
+  }
+
+  function bindPointer(P, el, keyMidi) {
     el.addEventListener('pointerdown', e => {
-      e.preventDefault();
-      // touch playing does NOT auto-enable the keyboard;
-      // but if keyboard mode is already on, keep its focus alive
-      refocusIfEnabled();
-      noteOn(keyMidi); visualOn(keyMidi);
+      e.preventDefault(); refocusIfEnabled();
+      audioOn(P.soundMidi(keyMidi)); el.classList.add('down');
     });
-    const up = () => { noteOff(keyMidi); visualOff(keyMidi); };
+    const up = () => { audioOff(P.soundMidi(keyMidi)); el.classList.remove('down'); };
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
-    el.addEventListener('pointerleave', e => {
-      if (e.buttons) { noteOff(keyMidi); visualOff(keyMidi); }
-    });
-  }
-  function releaseAllHeld() {
-    held.forEach(ch => {
-      const m = keyByChar[ch];
-      if (m != null) { noteOff(m); visualOff(m); }
-    });
-    held.clear();
+    el.addEventListener('pointerleave', e => { if (e.buttons) up(); });
   }
 
-  // ----- functions -----
-  function shiftWindow(d) {
-    const maxStart = allWhite.length - WHITE_COUNT;
-    const next = Math.max(0, Math.min(maxStart, windowStart + d));
-    if (next === windowStart) return;
-    releaseAllHeld(); windowStart = next; buildWindow();
+  // ============ layouts ============
+  // BASIC mode: single piano (lower container), classic A~; / W E R T Y U I O P.
+  const BASIC_WHITE = ['a','s','d','f','g','h','j','k','l',';'];
+  const BASIC_GAP   = ['w','e','r','t','y','u','i','o','p'];
+
+  // EXTENDED mode:
+  //  lower piano  white: Z X C V B N M , . /   black(gap): A S D F G H J K L ;
+  //  upper piano  white: Q W E R T Y U I O P   black(gap): 1 2 3 4 5 6 7 8 9 0
+  const LOWER_WHITE = ['z','x','c','v','b','n','m',',','.','/'];
+  // physical keyboard: A sits left of Z; the key ABOVE the Z–X gap is S, not A.
+  // so gap keys start at S. (gap i = between lower-white i and i+1)
+  const LOWER_GAP   = ['s','d','f','g','h','j','k','l',';'];       // 9 gaps
+  const UPPER_WHITE = ['q','w','e','r','t','y','u','i','o','p'];
+  // likewise: 1 sits left of Q; the key above the Q–W gap is 2, not 1.
+  const UPPER_GAP   = ['2','3','4','5','6','7','8','9','0'];        // 9 gaps
+
+  let mode = 'basic';
+  let pianos = [];        // active pianos
+  let lowerP = null, upperP = null;
+
+  const elLower = document.getElementById('pianoLower');
+  const elUpper = document.getElementById('pianoUpper');
+  const lowerInfo = document.getElementById('lowerInfo');
+  const upperInfo = document.getElementById('upperInfo');
+
+  function buildMode() {
+    // release everything currently held
+    pianos.forEach(p => p.releaseHeld());
+
+    if (mode === 'basic') {
+      lowerP = makePiano({
+        el: elLower, infoEl: lowerInfo,
+        whiteKeys: BASIC_WHITE, gapKeys: BASIC_GAP,
+        startMidi: 60, color: 'lower'   // C4
+      });
+      upperP = null;
+      pianos = [lowerP];
+    } else {
+      lowerP = makePiano({
+        el: elLower, infoEl: lowerInfo,
+        whiteKeys: LOWER_WHITE, gapKeys: LOWER_GAP,
+        startMidi: 60, color: 'lower'   // C4
+      });
+      upperP = makePiano({
+        el: elUpper, infoEl: upperInfo,
+        whiteKeys: UPPER_WHITE, gapKeys: UPPER_GAP,
+        startMidi: 77, color: 'upper'   // F5
+      });
+      pianos = [lowerP, upperP];
+    }
+    pianos.forEach(p => p.build());
+    buildControls();
+    updateHint();
+    document.body.setAttribute('data-mode', mode);
   }
-  function setTranspose(t) {
-    const next = Math.max(-24, Math.min(24, t));
-    if (next === transpose) return;
-    releaseAllHeld(); transpose = next;
-    document.getElementById('trVal').textContent = transpose > 0 ? '+' + transpose : '' + transpose;
-    buildWindow();
+
+  // reverse lookup: which piano owns a given play char?
+  function pianoForChar(ch) {
+    for (const p of pianos) if (ch in p.keyByChar) return p;
+    return null;
   }
+
+  // ============ function bindings (mode-aware) ============
+  // basic mode keeps the rich set; extended mode keeps only transpose + window shift,
+  // with fixed arrow/comma keys per the spec.
+  const DEFAULT_BINDINGS = {
+    basic: {
+      octDown:['z'], octUp:['x'], winDown:[','], winUp:['.'],
+      bendDown:['['], bendUp:[']'], volDown:['-'], volUp:['='],
+      toneGrand:['1'], toneElec:['2'], toneSynth:['3'],
+      sustain:['shift'], toggleKb:['`']
+    },
+    extended: {
+      // window shift: upper = arrows up/down, lower = arrows left/right
+      upWinUp:['arrowup'], upWinDown:['arrowdown'],
+      loWinDown:['arrowleft'], loWinUp:['arrowright'],
+      // shared transpose for BOTH pianos
+      trDown:['-'], trUp:['='],
+      // pitch bend (hold)
+      bendDown:['['], bendUp:[']'],
+      sustain:['shift'], toggleKb:['`']
+    }
+  };
+  const BIND_META = {
+    basic: {
+      octDown:{name:'옥타브 −',desc:'한 옥타브 아래'}, octUp:{name:'옥타브 +',desc:'한 옥타브 위'},
+      winDown:{name:'창 ←',desc:'흰건반 한 칸 왼쪽'}, winUp:{name:'창 →',desc:'흰건반 한 칸 오른쪽'},
+      bendDown:{name:'벤드 ↓',desc:'누르는 동안 반음 내려 휘어짐'}, bendUp:{name:'벤드 ↑',desc:'누르는 동안 반음 올려 휘어짐'},
+      volDown:{name:'볼륨 −',desc:'작게'}, volUp:{name:'볼륨 +',desc:'크게'},
+      toneGrand:{name:'음색 GRAND',desc:'어쿠스틱'}, toneElec:{name:'음색 ELEC',desc:'일렉트릭'},
+      toneSynth:{name:'음색 SYNTH',desc:'신스'}, sustain:{name:'서스테인',desc:'누르는 동안 지속'},
+      toggleKb:{name:'키보드 입력 ON/OFF',desc:'키보드 연주 켜기·끄기 토글'}
+    },
+    extended: {
+      upWinUp:{name:'위 피아노 자리 ↑',desc:'위 건반 흰건반 한 칸 오른쪽'},
+      upWinDown:{name:'위 피아노 자리 ↓',desc:'위 건반 흰건반 한 칸 왼쪽'},
+      loWinUp:{name:'아래 피아노 자리 →',desc:'아래 건반 흰건반 한 칸 오른쪽'},
+      loWinDown:{name:'아래 피아노 자리 ←',desc:'아래 건반 흰건반 한 칸 왼쪽'},
+      trDown:{name:'트랜스포즈 −',desc:'두 건반 함께 반음 내림'},
+      trUp:{name:'트랜스포즈 +',desc:'두 건반 함께 반음 올림'},
+      bendDown:{name:'벤드 ↓',desc:'누르는 동안 반음 내려 휘어짐'}, bendUp:{name:'벤드 ↑',desc:'누르는 동안 반음 올려 휘어짐'},
+      sustain:{name:'서스테인',desc:'누르는 동안 지속'},
+      toggleKb:{name:'키보드 입력 ON/OFF',desc:'키보드 연주 켜기·끄기 토글'}
+    }
+  };
+  let bindings = JSON.parse(JSON.stringify(DEFAULT_BINDINGS));
+
+  // action implementations, resolved at call-time against current pianos
+  const ACTION_IMPL = {
+    // basic
+    octDown:  () => lowerP.shift(-7),
+    octUp:    () => lowerP.shift(7),
+    winDown:  () => lowerP.shift(-1),
+    winUp:    () => lowerP.shift(1),
+    trDown:   () => applyTranspose(-1),
+    trUp:     () => applyTranspose(1),
+    volDown:  () => setVol(volume - 0.1),
+    volUp:    () => setVol(volume + 0.1),
+    toneGrand:() => setTone('grand'),
+    toneElec: () => setTone('electric'),
+    toneSynth:() => setTone('synth'),
+    // extended (window shift is per-piano; transpose is shared via trDown/trUp above)
+    upWinUp:   () => upperP && upperP.shift(1),
+    upWinDown: () => upperP && upperP.shift(-1),
+    loWinUp:   () => lowerP.shift(1),
+    loWinDown: () => lowerP.shift(-1)
+  };
+
+  // shared transpose: basic mode -> lower only; extended -> both pianos in lockstep
+  function applyTranspose(delta) {
+    pianos.forEach(p => p.setTranspose(p.transpose + delta));
+  }
+
+  // current key -> action map (rebuilt on mode/binding change)
+  let actionByKey = {};
+  function rebuildActionMap() {
+    actionByKey = {};
+    const b = bindings[mode];
+    for (const fn in b) b[fn].forEach(k => { actionByKey[k] = fn; });
+  }
+
+  // set of play keys for the current mode
+  function playKeySet() {
+    const s = new Set();
+    pianos.forEach(p => {
+      p.whiteKeys.forEach(k => s.add(k));
+      p.gapKeys.forEach(k => { if (k) s.add(k); });
+    });
+    return s;
+  }
+  let PLAY = new Set();
+
+  // ============ controls (mode-specific) ============
+  const controls = document.getElementById('controls');
+  function buildControls() {
+    if (mode === 'basic') {
+      controls.innerHTML = `
+        <div class="ctl"><label>Octave</label><div class="row">
+          <button data-act="octDown">−</button><span class="val" id="octVal">±0</span><button data-act="octUp">+</button></div></div>
+        <div class="ctl"><label>Shift Window</label><div class="row">
+          <button data-act="winDown">−</button><span class="val cyan" id="winVal">A = C4</span><button data-act="winUp">+</button></div></div>
+        <div class="ctl"><label>Transpose</label><div class="row">
+          <button data-act="trDown">−</button><span class="val mag" id="trVal">0</span><button data-act="trUp">+</button></div></div>
+        <div class="ctl"><label>Volume</label><div class="row">
+          <button data-act="volDown">−</button><span class="val" id="volVal">${Math.round(volume*100)}</span><button data-act="volUp">+</button></div></div>
+        <div class="ctl"><label>Tone</label><div class="seg" id="toneSeg">
+          <button data-tone="grand">GRAND</button><button data-tone="electric">ELEC</button><button data-tone="synth">SYNTH</button></div></div>`;
+      syncBasicReadouts();
+    } else {
+      controls.innerHTML = `
+        <div class="ctl"><label>아래 자리 ←→</label><div class="row">
+          <button data-act="loWinDown">−</button><span class="val cyan" id="loWinVal">Z=C4</span><button data-act="loWinUp">+</button></div></div>
+        <div class="ctl"><label>위 자리 ↑↓</label><div class="row">
+          <button data-act="upWinDown">−</button><span class="val mag" id="upWinVal">Q=F5</span><button data-act="upWinUp">+</button></div></div>
+        <div class="ctl"><label>Transpose (공통)</label><div class="row">
+          <button data-act="trDown">−</button><span class="val" id="trVal">0</span><button data-act="trUp">+</button></div></div>
+        <div class="ctl"><label>Volume</label><div class="row">
+          <button data-act="volDown">−</button><span class="val" id="volVal">${Math.round(volume*100)}</span><button data-act="volUp">+</button></div></div>
+        <div class="ctl"><label>Tone</label><div class="seg" id="toneSeg">
+          <button data-tone="grand">GRAND</button><button data-tone="electric">ELEC</button><button data-tone="synth">SYNTH</button></div></div>`;
+    }
+    // wire control buttons
+    controls.querySelectorAll('button[data-act]').forEach(btn => {
+      btn.onclick = () => { runAction(btn.dataset.act); refocusIfEnabled(); };
+    });
+    const seg = controls.querySelector('#toneSeg');
+    if (seg) {
+      seg.querySelectorAll('button').forEach(b =>
+        b.classList.toggle('on', b.dataset.tone === tone));
+      seg.addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        setTone(b.dataset.tone); refocusIfEnabled();
+      });
+    }
+    refreshControlReadouts();
+  }
+
+  // volume / tone helpers
   function setVol(v) {
     volume = Math.max(0, Math.min(1, Math.round(v * 10) / 10));
-    document.getElementById('volVal').textContent = Math.round(volume * 100);
+    const el = document.getElementById('volVal');
+    if (el) el.textContent = Math.round(volume * 100);
     if (masterGain) masterGain.gain.value = volume;
   }
   function setTone(name) {
     tone = name;
-    document.querySelectorAll('#toneSeg button').forEach(b =>
-      b.classList.toggle('on', b.dataset.tone === name));
+    const seg = controls.querySelector('#toneSeg');
+    if (seg) seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.tone === name));
   }
 
-  // ----- capture field / keyboard enable toggle -----
+  function syncBasicReadouts() {
+    if (mode !== 'basic') return;
+    const homeIdx = allWhite.indexOf(60);
+    const octShift = Math.round((lowerP.windowStart - homeIdx) / 7);
+    const oc = document.getElementById('octVal');
+    if (oc) oc.textContent = octShift > 0 ? '+' + octShift : (octShift < 0 ? '' + octShift : '±0');
+    const wv = document.getElementById('winVal');
+    if (wv) wv.textContent = lowerP.infoEl ? lowerP.infoEl.textContent.split(' ')[0] === 'A'
+              ? lowerP.infoEl.textContent : 'A = ' + nameOf(allWhite[lowerP.windowStart] + lowerP.transpose)
+              : '';
+    if (wv) wv.textContent = 'A = ' + nameOf(allWhite[lowerP.windowStart] + lowerP.transpose);
+    const tv = document.getElementById('trVal');
+    if (tv) tv.textContent = lowerP.transpose > 0 ? '+' + lowerP.transpose : '' + lowerP.transpose;
+  }
+
+  function refreshControlReadouts() {
+    if (mode === 'basic') { syncBasicReadouts(); return; }
+    const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+    set('loWinVal', 'Z=' + nameOf(allWhite[lowerP.windowStart] + lowerP.transpose));
+    if (upperP) set('upWinVal', 'Q=' + nameOf(allWhite[upperP.windowStart] + upperP.transpose));
+    // shared transpose readout (both pianos share the same value)
+    const tr = lowerP.transpose;
+    set('trVal', tr > 0 ? '+' + tr : '' + tr);
+  }
+
+  // run a function-action, then refresh readouts
+  function runAction(fn) {
+    const impl = ACTION_IMPL[fn];
+    if (!impl) return;
+    impl();
+    refreshControlReadouts();
+    flashHit();
+  }
+
+  // ============ capture / keyboard toggle ============
   const capture = document.getElementById('capture');
   const armBtn = document.getElementById('armBtn');
-  let kbEnabled = false;   // is keyboard input active?
-
-  // focus the hidden field -> opens soft keyboard on mobile, captures keys
+  let kbEnabled = false;
   function focusCapture() {
     capture.style.pointerEvents = 'auto';
     capture.focus({ preventScroll: true });
     capture.style.pointerEvents = 'none';
     capture.value = '';
   }
-  // re-grab focus, but ONLY if keyboard mode is on (used after touch / control taps)
-  function refocusIfEnabled() {
-    if (kbEnabled) focusCapture();
-  }
-  // explicit on/off toggle (the arm button)
+  function refocusIfEnabled() { if (kbEnabled) focusCapture(); }
   function toggleKeyboard() {
     if (kbEnabled) {
-      kbEnabled = false;
-      capture.blur();                 // closes soft keyboard on mobile
-      releaseAllHeld();               // drop any notes held via keyboard
+      kbEnabled = false; capture.blur();
+      pianos.forEach(p => p.releaseHeld());
+      // clear any active bend so it doesn't stay stuck
+      if (bendDir !== 0) { bendDir = 0; applyBend(0, 0.05); }
       armBtn.classList.remove('armed');
     } else {
-      kbEnabled = true;
-      focusCapture();
-      armBtn.classList.add('armed');
+      kbEnabled = true; focusCapture(); armBtn.classList.add('armed');
     }
   }
-  // keep the indicator in sync if focus is lost/gained on its own
   capture.addEventListener('focus', () => { if (kbEnabled) armBtn.classList.add('armed'); });
-  capture.addEventListener('blur',  () => {
-    // while the shortcut modal is open, focus juggling is expected -> don't change state
+  capture.addEventListener('blur', () => {
     if (overlay.classList.contains('show')) return;
-    armBtn.classList.remove('armed');
-    // losing focus while enabled (e.g. tapped elsewhere) counts as turning off
-    kbEnabled = false;
+    armBtn.classList.remove('armed'); kbEnabled = false;
   });
   capture.addEventListener('input', () => { capture.value = ''; });
   armBtn.addEventListener('click', toggleKeyboard);
@@ -706,202 +885,184 @@
     flashHit._t = setTimeout(() => armBtn.classList.remove('hit'), 90);
   }
 
-  // ----- reverse lookup: key char -> function id -----
-  let actionByKey = {};
-  function rebuildActionMap() {
-    actionByKey = {};
-    for (const fn in bindings) {
-      bindings[fn].forEach(k => { actionByKey[k] = fn; });
-    }
-  }
-  const ACTIONS = {
-    octDown:  () => shiftWindow(-7),
-    octUp:    () => shiftWindow(7),
-    winDown:  () => shiftWindow(-1),
-    winUp:    () => shiftWindow(1),
-    trDown:   () => setTranspose(transpose - 1),
-    trUp:     () => setTranspose(transpose + 1),
-    volDown:  () => setVol(volume - 0.1),
-    volUp:    () => setVol(volume + 0.1),
-    toneGrand:() => setTone('grand'),
-    toneElec: () => setTone('electric'),
-    toneSynth:() => setTone('synth')
-  };
-
-  // ----- key handling -----
-  const held = new Set();
+  // ============ key handling ============
   function normKey(e) {
     if (e.key === 'Shift') return 'shift';
     return (e.key || '').toLowerCase();
   }
   function handleDown(e) {
-    if (listening) return;            // modal is grabbing keys
-    if (!kbEnabled) return;           // keyboard input turned off -> ignore
-    if (e.repeat) return;
+    if (listening) return;
+    // this handler is bound to BOTH capture and window; the same event can
+    // bubble through both. mark it so we never process one keypress twice.
+    if (e._keysHandled) return;
+    e._keysHandled = true;
     const k = normKey(e);
-
-    // sustain (modifier-style)
-    if (actionByKey[k] === 'sustain') { sustain = true; return; }
-    // one-shot function keys
-    if (k in actionByKey && ACTIONS[actionByKey[k]]) {
-      ACTIONS[actionByKey[k]]();
-      flashHit(); e.preventDefault(); return;
+    // keyboard ON/OFF toggle must work EVEN WHEN keyboard input is off,
+    // so handle it before the kbEnabled guard. (ignore auto-repeat)
+    if (actionByKey[k] === 'toggleKb') {
+      if (!e.repeat) toggleKeyboard();
+      e.preventDefault();
+      return;
     }
-    // play keys
-    if (PLAY_KEYS.has(k) && !held.has(k)) {
-      held.add(k);
-      const m = keyByChar[k];
-      if (m != null) { noteOn(m); visualOn(m); }
-      flashHit(); e.preventDefault();
+    if (!kbEnabled) return;
+    if (e.repeat) return;
+    // sustain
+    if (actionByKey[k] === 'sustain') { sustain = true; e.preventDefault(); return; }
+    // pitch bend (hold) — modifier-style, handled on down/up like sustain
+    if (actionByKey[k] === 'bendDown') { bendStart(-1); e.preventDefault(); return; }
+    if (actionByKey[k] === 'bendUp')   { bendStart(1);  e.preventDefault(); return; }
+    // function keys
+    if (k in actionByKey && ACTION_IMPL[actionByKey[k]]) {
+      runAction(actionByKey[k]); e.preventDefault(); return;
+    }
+    // play keys -> route to owning piano
+    if (PLAY.has(k)) {
+      const p = pianoForChar(k);
+      if (p && p.pressChar(k)) { flashHit(); e.preventDefault(); }
     }
   }
   function handleUp(e) {
     if (listening) return;
-    if (!kbEnabled) return;
+    if (e._keysHandled) return;
+    e._keysHandled = true;
     const k = normKey(e);
+    if (actionByKey[k] === 'toggleKb') { e.preventDefault(); return; }
+    if (!kbEnabled) return;
     if (actionByKey[k] === 'sustain') { sustain = false; return; }
-    if (held.has(k)) {
-      held.delete(k);
-      const m = keyByChar[k];
-      if (m != null) { noteOff(m); visualOff(m); }
+    if (actionByKey[k] === 'bendDown') { bendRelease(-1); return; }
+    if (actionByKey[k] === 'bendUp')   { bendRelease(1);  return; }
+    if (PLAY.has(k)) {
+      const p = pianoForChar(k);
+      if (p) p.releaseChar(k);
     }
   }
   capture.addEventListener('keydown', handleDown);
   capture.addEventListener('keyup', handleUp);
   window.addEventListener('keydown', handleDown);
   window.addEventListener('keyup', handleUp);
-  window.addEventListener('blur', releaseAllHeld);
-
-  // ----- header buttons -----
-  document.getElementById('winUp').onclick   = () => shiftWindow(1);
-  document.getElementById('winDown').onclick = () => shiftWindow(-1);
-  document.getElementById('octUp').onclick   = () => shiftWindow(7);
-  document.getElementById('octDown').onclick = () => shiftWindow(-7);
-  document.getElementById('trUp').onclick    = () => setTranspose(transpose + 1);
-  document.getElementById('trDown').onclick  = () => setTranspose(transpose - 1);
-  document.getElementById('volUp').onclick   = () => setVol(volume + 0.1);
-  document.getElementById('volDown').onclick = () => setVol(volume - 0.1);
-  document.getElementById('toneSeg').addEventListener('click', e => {
-    const btn = e.target.closest('button');
-    if (btn) setTone(btn.dataset.tone);
+  window.addEventListener('blur', () => {
+    pianos.forEach(p => p.releaseHeld());
+    if (bendDir !== 0) { bendDir = 0; applyBend(0, 0.05); }
   });
 
-  // ----- key label helpers -----
-  function keyLabel(k) {
-    if (k === 'shift') return 'SHIFT';
-    if (k === ' ') return 'SPACE';
-    if (k === ',') return ','; if (k === '.') return '.';
-    return k.toUpperCase();
-  }
+  // ============ mode toggle ============
+  const modeToggle = document.getElementById('modeToggle');
+  modeToggle.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const newMode = b.dataset.mode;
+    if (newMode === mode) return;
+    mode = newMode;
+    modeToggle.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.mode === mode));
+    rebuildActionMap();
+    buildMode();
+    PLAY = playKeySet();
+    refocusIfEnabled();
+  });
 
-  // ----- binding modal -----
+  // ============ shortcuts modal ============
   const overlay = document.getElementById('overlay');
   const bindList = document.getElementById('bindList');
   const bindWarn = document.getElementById('bindWarn');
-  let listening = null;   // {fn, slotIndex} while waiting for a key
+  let listening = null;
 
+  function keyLabel(k) {
+    if (k === 'shift') return 'SHIFT';
+    if (k === ' ') return 'SPACE';
+    if (k === '`') return '` (백틱)';
+    if (k === 'arrowup') return '↑'; if (k === 'arrowdown') return '↓';
+    if (k === 'arrowleft') return '←'; if (k === 'arrowright') return '→';
+    if (k.length === 1) return k.toUpperCase();
+    return k.toUpperCase();
+  }
   function renderBindings() {
     bindList.innerHTML = '';
-    for (const fn in BIND_META) {
-      const meta = BIND_META[fn];
-      const row = document.createElement('div');
-      row.className = 'bindrow';
-      const info = document.createElement('div');
-      info.className = 'bindinfo';
-      info.innerHTML = `<div class="bn">${meta.name}</div><div class="bd">${meta.desc}</div>`;
-      const keys = document.createElement('div');
-      keys.className = 'bindkeys';
-      bindings[fn].forEach((k, idx) => {
-        const cap = document.createElement('div');
-        cap.className = 'kcap';
+    const b = bindings[mode], meta = BIND_META[mode];
+    for (const fn in meta) {
+      const row = document.createElement('div'); row.className = 'bindrow';
+      const info = document.createElement('div'); info.className = 'bindinfo';
+      info.innerHTML = `<div class="bn">${meta[fn].name}</div><div class="bd">${meta[fn].desc}</div>`;
+      const keys = document.createElement('div'); keys.className = 'bindkeys';
+      b[fn].forEach((k, idx) => {
+        const cap = document.createElement('div'); cap.className = 'kcap';
         cap.textContent = keyLabel(k);
         cap.onclick = () => startListen(fn, idx, cap);
         keys.appendChild(cap);
       });
-      row.appendChild(info);
-      row.appendChild(keys);
-      bindList.appendChild(row);
+      row.appendChild(info); row.appendChild(keys); bindList.appendChild(row);
     }
     document.getElementById('bindNote').innerHTML =
-      '연주 건반(A~; · W~P 줄)은 손 위치 고정이라 변경 대상이 아닙니다.<br>' +
-      '설정은 이 세션에만 적용됩니다.';
+      (mode === 'basic'
+        ? '연주 건반: 흰 A S D F G H J K L ;  ·  검은 W E R T Y U I O P'
+        : '연주 건반(아래 Z X C V B N M , . / + S~; / 위 Q~P + 2~0)은 고정입니다.') +
+      '<br>설정은 이 세션에만 적용됩니다.';
   }
-
   function startListen(fn, idx, cap) {
     if (listening) return;
     listening = { fn, idx };
-    cap.classList.add('listening');
-    cap.textContent = '...';
+    cap.classList.add('listening'); cap.textContent = '...';
     bindWarn.textContent = '키를 누르세요 (ESC 취소)';
   }
-
-  // capture keystrokes while assigning
   window.addEventListener('keydown', e => {
     if (!listening) return;
     e.preventDefault(); e.stopPropagation();
     if (e.key === 'Escape') { renderBindings(); listening = null; bindWarn.textContent = ''; return; }
     const k = normKey(e);
-    // reject play keys to avoid clobbering the piano
-    if (PLAY_KEYS.has(k)) {
-      bindWarn.textContent = '연주 건반(' + keyLabel(k) + ')은 기능에 쓸 수 없어요';
-      return;
-    }
-    // reject duplicate within another function
+    if (PLAY.has(k)) { bindWarn.textContent = '연주 건반(' + keyLabel(k) + ')은 쓸 수 없어요'; return; }
     const owner = actionByKey[k];
     if (owner && owner !== listening.fn) {
-      bindWarn.textContent = '"' + keyLabel(k) + '"는 이미 [' + BIND_META[owner].name + ']에 할당됨';
+      bindWarn.textContent = '"' + keyLabel(k) + '"는 이미 [' + BIND_META[mode][owner].name + ']에 할당됨';
       return;
     }
-    bindings[listening.fn][listening.idx] = k;
+    bindings[mode][listening.fn][listening.idx] = k;
     rebuildActionMap();
-    listening = null;
-    bindWarn.textContent = '';
-    renderBindings();
-    updateHint();
-  }, true);   // capture phase so it runs before play handler
-
-  document.getElementById('openKeys').onclick = () => {
-    renderBindings();
-    overlay.classList.add('show');
-    // focus the hidden field so a key can be captured even if keyboard mode is off
-    // (on mobile this also raises the soft keyboard for re-assignment)
-    focusCapture();
-  };
-  document.getElementById('closeKeys').onclick = () => {
-    overlay.classList.remove('show');
-    listening = null;
-    refocusIfEnabled();
-  };
+    listening = null; bindWarn.textContent = '';
+    renderBindings(); updateHint();
+  }, true);
+  document.getElementById('openKeys').onclick = () => { renderBindings(); overlay.classList.add('show'); focusCapture(); };
+  document.getElementById('closeKeys').onclick = () => { overlay.classList.remove('show'); listening = null; refocusIfEnabled(); };
   document.getElementById('resetKeys').onclick = () => {
-    bindings = JSON.parse(JSON.stringify(DEFAULT_BINDINGS));
-    rebuildActionMap();
-    renderBindings();
-    updateHint();
+    bindings[mode] = JSON.parse(JSON.stringify(DEFAULT_BINDINGS[mode]));
+    rebuildActionMap(); renderBindings(); updateHint();
     bindWarn.textContent = '기본값으로 되돌렸습니다';
   };
   overlay.addEventListener('click', e => {
-    if (e.target === overlay) {
-      overlay.classList.remove('show');
-      listening = null;
-      refocusIfEnabled();
-    }
+    if (e.target === overlay) { overlay.classList.remove('show'); listening = null; refocusIfEnabled(); }
   });
 
-  // ----- dynamic hint line -----
+  // ============ hint ============
+  function shortKey(k) {
+    // compact label for the hint line
+    if (k === '`') return '`';
+    return keyLabel(k);
+  }
   function updateHint() {
-    const b = bindings;
-    document.getElementById('hintText').innerHTML =
-      '흰건반 <b>A S D F G H J K L ;</b> · 검은건반 <b>W E R T Y U I O P</b><br>' +
-      '옥타브 <b>' + keyLabel(b.octDown[0]) + '</b>/<b>' + keyLabel(b.octUp[0]) + '</b>' +
-      ' · 창 이동 <b>' + keyLabel(b.winDown[0]) + '</b>/<b>' + keyLabel(b.winUp[0]) + '</b>' +
-      ' · 트랜스포즈 <b>' + keyLabel(b.trDown[0]) + '</b>/<b>' + keyLabel(b.trUp[0]) + '</b>' +
-      ' · 서스테인 <b>' + keyLabel(b.sustain[0]) + '</b>';
+    const b = bindings[mode];
+    const h = document.getElementById('hintText');
+    if (mode === 'basic') {
+      h.innerHTML =
+        '흰건반 <b>A S D F G H J K L ;</b> · 검은건반 <b>W E R T Y U I O P</b><br>' +
+        '옥타브 <b>' + shortKey(b.octDown[0]) + '</b>/<b>' + shortKey(b.octUp[0]) + '</b>' +
+        ' · 창 <b>' + shortKey(b.winDown[0]) + '</b>/<b>' + shortKey(b.winUp[0]) + '</b>' +
+        ' · 벤드 <b>' + shortKey(b.bendDown[0]) + '</b>/<b>' + shortKey(b.bendUp[0]) + '</b>' +
+        ' · 서스테인 <b>' + shortKey(b.sustain[0]) + '</b>' +
+        ' · 키보드 <b>' + shortKey(b.toggleKb[0]) + '</b>';
+    } else {
+      h.innerHTML =
+        '<span class="mag">위</span> 흰 <b>Q W E R T Y U I O P</b> 검은 <b>2~0</b>' +
+        ' · 자리 <span class="mag">' + shortKey(b.upWinDown[0]) + '/' + shortKey(b.upWinUp[0]) + '</span><br>' +
+        '<b>아래</b> 흰 <b>Z X C V B N M , . /</b> 검은 <b>S D F G H J K L ;</b>' +
+        ' · 자리 <b>' + shortKey(b.loWinDown[0]) + '/' + shortKey(b.loWinUp[0]) + '</b><br>' +
+        '트랜스포즈 <b>' + shortKey(b.trDown[0]) + '/' + shortKey(b.trUp[0]) + '</b>' +
+        ' · 벤드 <b>' + shortKey(b.bendDown[0]) + '/' + shortKey(b.bendUp[0]) + '</b>' +
+        ' · 서스테인 <b>' + shortKey(b.sustain[0]) + '</b>' +
+        ' · 키보드 <b>' + shortKey(b.toggleKb[0]) + '</b>';
+    }
   }
 
-  // ----- init -----
+  // ============ init ============
   rebuildActionMap();
-  buildWindow();
-  updateHint();
+  buildMode();
+  PLAY = playKeySet();
 })();
 </script>
 </body>
