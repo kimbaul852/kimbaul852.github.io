@@ -427,6 +427,7 @@
   <div class="lgroup">
     <span class="recdot" id="recDot"></span>
     <button class="tbtn" id="recBtn">● REC (SPACE)</button>
+    <button class="tbtn" id="playBtn">▶ PLAY</button>
     <button class="tbtn" id="stopBtn">■ STOP</button>
     <button class="tbtn" id="clearBtn">✕ CLEAR</button>
   </div>
@@ -1271,6 +1272,17 @@
     lp.notes = [];
     updateLooperUI();
   }
+  // play back the recorded loop (no count-in, no recording) — loops until STOP
+  function looperPlay() {
+    if (lp.state !== 'stopped' || !lp.notes.length) return;
+    ensureAudio();
+    if (actx.state === 'suspended') actx.resume();
+    lp.cycleStart = actx.currentTime + 0.12;
+    lp.cycleScheduled = false;
+    lp.state = 'playing';
+    startScheduler();
+    updateLooperUI();
+  }
 
   function startScheduler() {
     if (lp.schedTimer) return;
@@ -1342,6 +1354,11 @@
     } else if (lp.state === 'countin') recBtn.textContent = '● 카운트인…';
     else if (lp.state === 'recording') recBtn.textContent = '● 녹음 중 (SPACE=재생)';
     else if (lp.state === 'playing') recBtn.textContent = '▶ 재생 중 (SPACE=덧녹음)';
+    // PLAY only makes sense when stopped and something is recorded
+    const playBtn = document.getElementById('playBtn');
+    playBtn.disabled = !(lp.state === 'stopped' && lp.notes.length > 0);
+    playBtn.style.opacity = playBtn.disabled ? '0.4' : '1';
+    playBtn.style.cursor = playBtn.disabled ? 'default' : 'pointer';
   }
   function setBpm(v) { lp.bpm = Math.max(40, Math.min(240, v)); updateLooperUI(); }
   function setBars(v) {
@@ -1358,6 +1375,7 @@
     el.onclick = e => { fn(); e.currentTarget.blur(); refocusIfEnabled(); };
   }
   wire('recBtn',   () => looperToggle());
+  wire('playBtn',  () => looperPlay());
   wire('stopBtn',  () => looperStop());
   wire('clearBtn', () => looperClear());
   wire('bpmDown',  () => setBpm(lp.bpm - 4));
