@@ -322,6 +322,57 @@
   }
   .keysbtn:hover { border-color: rgba(255,174,59,0.5); }
 
+  /* ---------- looper ---------- */
+  .looper {
+    width: min(1100px, 97vw);
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px; padding: 10px 14px;
+  }
+  .looper .lgroup { display: flex; align-items: center; gap: 8px; }
+  .recdot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--dim); transition: background 0.15s, box-shadow 0.15s;
+  }
+  .recdot.rec { background: var(--magenta); box-shadow: 0 0 12px var(--magenta); animation: recpulse 1s infinite; }
+  .recdot.play { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+  @keyframes recpulse { 50% { opacity: 0.35; } }
+  .looper button.tbtn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--ink); border-radius: 8px; padding: 6px 10px; cursor: pointer;
+    font-family: 'Space Mono', monospace; font-size: 11px; white-space: nowrap;
+  }
+  .looper button.tbtn:hover { border-color: rgba(255,174,59,0.5); }
+  .looper .lcol { display: flex; flex-direction: column; gap: 3px; }
+  .looper label {
+    font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.12em;
+    color: var(--dim); text-transform: uppercase;
+  }
+  .looper .stepper { display: flex; align-items: center; gap: 5px; }
+  .looper .stepper button {
+    width: 22px; height: 22px; border-radius: 6px; cursor: pointer;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    color: var(--ink); font-size: 13px; line-height: 1;
+  }
+  .looper .lval {
+    font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700;
+    color: var(--amber); min-width: 48px; text-align: center;
+  }
+  .beatdots { display: flex; gap: 7px; }
+  .beatdots .bd {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    transition: transform 0.05s, background 0.05s, box-shadow 0.05s;
+  }
+  .beatdots .bd.on { background: var(--cyan); box-shadow: 0 0 12px var(--cyan); transform: scale(1.25); }
+  .beatdots .bd.acc.on { background: var(--amber); box-shadow: 0 0 14px var(--amber); }
+  .looper .status {
+    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--dim);
+    margin-left: auto; min-width: 180px; text-align: right;
+  }
+
   @media (max-width: 640px) {
     .controls { width: 100%; }
     .hint { text-align: left; }
@@ -369,6 +420,24 @@
     <div class="rowtag"><span class="badge lower">아래 / LOWER</span><span id="lowerInfo"></span></div>
     <div class="piano" id="pianoLower"></div>
   </div>
+</div>
+
+<!-- looper / loop recorder -->
+<div class="looper" id="looper">
+  <div class="lgroup">
+    <span class="recdot" id="recDot"></span>
+    <button class="tbtn" id="recBtn">● REC (SPACE)</button>
+    <button class="tbtn" id="stopBtn">■ STOP</button>
+    <button class="tbtn" id="clearBtn">✕ CLEAR</button>
+  </div>
+  <div class="lcol"><label>BPM</label><div class="stepper">
+    <button id="bpmDown">−</button><span class="lval" id="bpmVal">100</span><button id="bpmUp">+</button></div></div>
+  <div class="lcol"><label>마디 BARS</label><div class="stepper">
+    <button id="barsDown">−</button><span class="lval" id="barsVal">4</span><button id="barsUp">+</button></div></div>
+  <div class="lcol"><label>박자 BEAT</label><div class="stepper">
+    <button id="beatDown">−</button><span class="lval" id="beatVal">4/4</span><button id="beatUp">+</button></div></div>
+  <div class="beatdots" id="beatDots"></div>
+  <div class="status" id="lpStatus">정지 · SPACE로 카운트인 후 녹음</div>
 </div>
 
 <!-- shortcuts modal -->
@@ -576,6 +645,7 @@
       if (m == null) return false;
       P.held.add(ch);
       audioOn(P.soundMidi(m));
+      recordNoteOn(P.soundMidi(m));
       P.elByMidi[m]?.classList.add('down');
       return true;
     };
@@ -583,7 +653,7 @@
       if (!P.held.has(ch)) return false;
       P.held.delete(ch);
       const m = P.keyByChar[ch];
-      if (m != null) { audioOff(P.soundMidi(m)); P.elByMidi[m]?.classList.remove('down'); }
+      if (m != null) { audioOff(P.soundMidi(m)); recordNoteOff(P.soundMidi(m)); P.elByMidi[m]?.classList.remove('down'); }
       return true;
     };
     return P;
@@ -598,9 +668,9 @@
   function bindPointer(P, el, keyMidi) {
     el.addEventListener('pointerdown', e => {
       e.preventDefault(); refocusIfEnabled();
-      audioOn(P.soundMidi(keyMidi)); el.classList.add('down');
+      audioOn(P.soundMidi(keyMidi)); recordNoteOn(P.soundMidi(keyMidi)); el.classList.add('down');
     });
-    const up = () => { audioOff(P.soundMidi(keyMidi)); el.classList.remove('down'); };
+    const up = () => { audioOff(P.soundMidi(keyMidi)); recordNoteOff(P.soundMidi(keyMidi)); el.classList.remove('down'); };
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
     el.addEventListener('pointerleave', e => { if (e.buttons) up(); });
@@ -904,6 +974,12 @@
       e.preventDefault();
       return;
     }
+    // looper transport: SPACE works even when keyboard play is off
+    if ((k === ' ' || e.code === 'Space') && !overlay.classList.contains('show')) {
+      if (!e.repeat) looperToggle();
+      e.preventDefault();
+      return;
+    }
     if (!kbEnabled) return;
     if (e.repeat) return;
     // sustain
@@ -927,6 +1003,7 @@
     e._keysHandled = true;
     const k = normKey(e);
     if (actionByKey[k] === 'toggleKb') { e.preventDefault(); return; }
+    if (k === ' ' || e.code === 'Space') { e.preventDefault(); return; }
     if (!kbEnabled) return;
     if (actionByKey[k] === 'sustain') { sustain = false; return; }
     if (actionByKey[k] === 'bendDown') { bendRelease(-1); return; }
@@ -1058,6 +1135,239 @@
         ' · 키보드 <b>' + shortKey(b.toggleKb[0]) + '</b>';
     }
   }
+
+  // ============ looper (loop recorder) ============
+  // Records the notes you PLAY (keyboard or pointer) into a fixed-length loop.
+  // Timing is stored in BEATS so changing BPM rescales playback naturally.
+  // Count-in plays an audible metronome for one bar; after that the beat is
+  // purely a visual blink. Only your piano notes go into the loop — never the
+  // metronome, and playback uses its own voices so it is never re-recorded.
+  const lp = {
+    bpm: 100, bars: 4, beatsPerBar: 4,
+    state: 'stopped',          // stopped | countin | recording | playing
+    notes: [],                 // {startBeat, durBeat, midi, tone}
+    pending: new Map(),        // midi -> {startBeat, tone, onCtx}
+    cycleStart: 0,             // ctx time at which the current loop cycle began
+    cycleScheduled: false,
+    schedTimer: null,
+    timers: [],                // pending visual-flash timeouts
+    voices: []                 // scheduled playback voices (for stop/clear)
+  };
+  const beatDurNow = () => 60 / lp.bpm;
+  const loopBeats  = () => lp.bars * lp.beatsPerBar;
+  const loopDurNow = () => loopBeats() * beatDurNow();
+
+  // --- standalone playback voice (bypasses the live `active` map) ---
+  function spawnVoice(midi, startTime, dur, toneName) {
+    ensureAudio();
+    const cfg = TONES[toneName] || TONES[tone];
+    const g = actx.createGain(); g.connect(masterGain);
+    const d = Math.max(dur, 0.05);
+    const relStart = startTime + d, rel = 0.26;
+    g.gain.setValueAtTime(0.0001, startTime);
+    g.gain.exponentialRampToValueAtTime(0.85, startTime + cfg.attack);
+    g.gain.exponentialRampToValueAtTime(0.2, startTime + Math.min(cfg.decay, d));
+    g.gain.exponentialRampToValueAtTime(0.0001, relStart + rel);
+    const oscs = [];
+    cfg.types.forEach((t, i) => {
+      const o = actx.createOscillator();
+      o.type = t; o.frequency.value = f2(midi);
+      o.detune.value = cfg.detune ? (i ? cfg.detune : -cfg.detune) : 0;
+      const og = actx.createGain(); og.gain.value = cfg.mix[i];
+      o.connect(og); og.connect(g); o.start(startTime); o.stop(relStart + rel + 0.05);
+      oscs.push(o);
+    });
+    lp.voices.push({ oscs, g, end: relStart + rel + 0.05 });
+  }
+  function fadeLooperVoices() {
+    if (!actx) return;
+    const now = actx.currentTime;
+    lp.voices.forEach(v => {
+      try {
+        v.g.gain.cancelScheduledValues(now);
+        v.g.gain.setValueAtTime(Math.max(v.g.gain.value, 0.0001), now);
+        v.g.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+        v.oscs.forEach(o => { try { o.stop(now + 0.12); } catch (e) {} });
+      } catch (e) {}
+    });
+    lp.voices = [];
+  }
+
+  // --- metronome click (count-in only) ---
+  function metroClick(time, accent) {
+    ensureAudio();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.frequency.value = accent ? 1760 : 1100;
+    o.connect(g); g.connect(masterGain);
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.exponentialRampToValueAtTime(accent ? 0.5 : 0.3, time + 0.001);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + 0.06);
+    o.start(time); o.stop(time + 0.08);
+  }
+
+  // --- recording hooks (called from the note-input sites) ---
+  function recordNoteOn(midi) {
+    if (lp.state !== 'recording' || !actx) return;
+    const ld = loopDurNow();
+    const rel = (((actx.currentTime - lp.cycleStart) % ld) + ld) % ld;
+    lp.pending.set(midi, { midi, startBeat: rel / beatDurNow(), tone, onCtx: actx.currentTime });
+  }
+  function recordNoteOff(midi) {
+    if (!actx) return;
+    const p = lp.pending.get(midi);
+    if (!p) return;
+    lp.pending.delete(midi);
+    pushNote(p, actx.currentTime);
+  }
+  function pushNote(p, offCtx) {
+    const ld = loopDurNow();
+    let durSec = offCtx - p.onCtx;
+    if (durSec < 0) durSec += ld;
+    durSec = Math.min(durSec, ld * 0.98);
+    if (durSec < 0.05) durSec = 0.12;
+    lp.notes.push({ startBeat: p.startBeat, durBeat: durSec / beatDurNow(), midi: p.midi, tone: p.tone });
+  }
+  function finalizePending() {
+    if (!actx) { lp.pending.clear(); return; }
+    const now = actx.currentTime;
+    lp.pending.forEach(p => pushNote(p, now));
+    lp.pending.clear();
+  }
+
+  // --- transport (SPACE drives this via looperToggle) ---
+  function looperToggle() {
+    if (lp.state === 'stopped') looperStart();
+    else if (lp.state === 'countin') looperStop();
+    else if (lp.state === 'recording') { finalizePending(); lp.state = 'playing'; updateLooperUI(); }
+    else if (lp.state === 'playing') { lp.state = 'recording'; updateLooperUI(); }
+  }
+  function looperStart() {
+    ensureAudio();
+    if (actx.state === 'suspended') actx.resume();
+    const bd = beatDurNow(), start = actx.currentTime + 0.15;
+    // one bar of audible count-in (+ visual)
+    for (let i = 0; i < lp.beatsPerBar; i++) {
+      metroClick(start + i * bd, i === 0);
+      scheduleBeatFlash(start + i * bd, i, -1, true);
+    }
+    lp.cycleStart = start + lp.beatsPerBar * bd;
+    lp.cycleScheduled = false;
+    lp.state = 'countin';
+    startScheduler();
+    updateLooperUI();
+  }
+  function looperStop() {
+    finalizePending();
+    lp.state = 'stopped';
+    if (lp.schedTimer) { clearInterval(lp.schedTimer); lp.schedTimer = null; }
+    lp.timers.forEach(t => clearTimeout(t)); lp.timers = [];
+    fadeLooperVoices();
+    lp.cycleScheduled = false;
+    resetBeatDots();
+    updateLooperUI();
+  }
+  function looperClear() {
+    looperStop();
+    lp.notes = [];
+    updateLooperUI();
+  }
+
+  function startScheduler() {
+    if (lp.schedTimer) return;
+    lp.schedTimer = setInterval(schedTick, 25);
+    schedTick();
+  }
+  function schedTick() {
+    if (!actx || lp.state === 'stopped') return;
+    const now = actx.currentTime, ahead = now + 0.12;
+    const bd = beatDurNow(), ld = loopDurNow();
+    if (lp.state === 'countin' && now >= lp.cycleStart) { lp.state = 'recording'; updateLooperUI(); }
+    // schedule a whole cycle's playback + beat visuals once, just before it starts
+    if (!lp.cycleScheduled && lp.cycleStart <= ahead) {
+      lp.notes.forEach(n => spawnVoice(n.midi, lp.cycleStart + n.startBeat * bd, n.durBeat * bd, n.tone));
+      for (let b = 0; b < loopBeats(); b++) {
+        scheduleBeatFlash(lp.cycleStart + b * bd, b % lp.beatsPerBar, Math.floor(b / lp.beatsPerBar), false);
+      }
+      lp.cycleScheduled = true;
+    }
+    if (now >= lp.cycleStart + ld) { lp.cycleStart += ld; lp.cycleScheduled = false; }
+    // drop finished voices so they can be garbage-collected
+    if (lp.voices.length > 64) lp.voices = lp.voices.filter(v => v.end > now);
+  }
+
+  // --- beat visuals (audio-clock aligned) ---
+  function scheduleBeatFlash(time, beatInBar, barIndex, isCountIn) {
+    const delay = (time - actx.currentTime) * 1000;
+    const id = setTimeout(() => flashBeat(beatInBar, barIndex, isCountIn), Math.max(0, delay));
+    lp.timers.push(id);
+  }
+  function flashBeat(beatInBar, barIndex, isCountIn) {
+    const dots = beatDotsEl.children;
+    for (let i = 0; i < dots.length; i++) dots[i].classList.remove('on');
+    if (dots[beatInBar]) {
+      dots[beatInBar].classList.add('on');
+      const off = Math.min(140, beatDurNow() * 1000 * 0.6);
+      setTimeout(() => { if (dots[beatInBar]) dots[beatInBar].classList.remove('on'); }, off);
+    }
+    if (isCountIn) lpStatusEl.textContent = '카운트인… ' + (beatInBar + 1) + '/' + lp.beatsPerBar;
+    else if (lp.state === 'recording') lpStatusEl.textContent = '● 녹음 중 · 마디 ' + (barIndex + 1) + '/' + lp.bars;
+    else if (lp.state === 'playing') lpStatusEl.textContent = '▶ 재생 · 마디 ' + (barIndex + 1) + '/' + lp.bars + ' · ' + lp.notes.length + '음';
+  }
+  function resetBeatDots() {
+    const dots = beatDotsEl.children;
+    for (let i = 0; i < dots.length; i++) dots[i].classList.remove('on');
+  }
+  function renderBeatDots() {
+    beatDotsEl.innerHTML = '';
+    for (let i = 0; i < lp.beatsPerBar; i++) {
+      const d = document.createElement('div');
+      d.className = 'bd' + (i === 0 ? ' acc' : '');
+      beatDotsEl.appendChild(d);
+    }
+  }
+
+  // --- looper UI ---
+  const recDotEl = document.getElementById('recDot');
+  const beatDotsEl = document.getElementById('beatDots');
+  const lpStatusEl = document.getElementById('lpStatus');
+  function updateLooperUI() {
+    recDotEl.className = 'recdot' + (lp.state === 'recording' ? ' rec' : (lp.state === 'playing' ? ' play' : ''));
+    document.getElementById('bpmVal').textContent = lp.bpm;
+    document.getElementById('barsVal').textContent = lp.bars;
+    document.getElementById('beatVal').textContent = lp.beatsPerBar + '/4';
+    const recBtn = document.getElementById('recBtn');
+    if (lp.state === 'stopped') {
+      recBtn.textContent = '● REC (SPACE)';
+      lpStatusEl.textContent = '정지 · SPACE로 카운트인 후 녹음 (' + lp.notes.length + '음)';
+    } else if (lp.state === 'countin') recBtn.textContent = '● 카운트인…';
+    else if (lp.state === 'recording') recBtn.textContent = '● 녹음 중 (SPACE=재생)';
+    else if (lp.state === 'playing') recBtn.textContent = '▶ 재생 중 (SPACE=덧녹음)';
+  }
+  function setBpm(v) { lp.bpm = Math.max(40, Math.min(240, v)); updateLooperUI(); }
+  function setBars(v) {
+    if (lp.state !== 'stopped') return;
+    lp.bars = Math.max(1, Math.min(8, v)); updateLooperUI();
+  }
+  function setBeatsPerBar(v) {
+    if (lp.state !== 'stopped') return;
+    lp.beatsPerBar = Math.max(2, Math.min(8, v)); renderBeatDots(); updateLooperUI();
+  }
+  // blur the button after a click so a later SPACE can't re-trigger the focused one
+  function wire(id, fn) {
+    const el = document.getElementById(id);
+    el.onclick = e => { fn(); e.currentTarget.blur(); refocusIfEnabled(); };
+  }
+  wire('recBtn',   () => looperToggle());
+  wire('stopBtn',  () => looperStop());
+  wire('clearBtn', () => looperClear());
+  wire('bpmDown',  () => setBpm(lp.bpm - 4));
+  wire('bpmUp',    () => setBpm(lp.bpm + 4));
+  wire('barsDown', () => setBars(lp.bars - 1));
+  wire('barsUp',   () => setBars(lp.bars + 1));
+  wire('beatDown', () => setBeatsPerBar(lp.beatsPerBar - 1));
+  wire('beatUp',   () => setBeatsPerBar(lp.beatsPerBar + 1));
+  renderBeatDots();
+  updateLooperUI();
 
   // ============ init ============
   rebuildActionMap();
