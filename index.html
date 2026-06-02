@@ -430,6 +430,7 @@
     <button class="tbtn" id="playBtn">▶ PLAY</button>
     <button class="tbtn" id="stopBtn">■ STOP</button>
     <button class="tbtn" id="clearBtn">✕ CLEAR</button>
+    <button class="tbtn" id="metroBtn">🔊 메트로놈</button>
   </div>
   <div class="lcol"><label>BPM</label><div class="stepper">
     <button id="bpmDown">−</button><span class="lval" id="bpmVal">100</span><button id="bpmUp">+</button></div></div>
@@ -1145,6 +1146,7 @@
   // metronome, and playback uses its own voices so it is never re-recorded.
   const lp = {
     bpm: 100, bars: 4, beatsPerBar: 4,
+    metro: true,               // audible metronome on every beat (never recorded)
     state: 'stopped',          // stopped | countin | recording | playing
     notes: [],                 // {startBeat, durBeat, midi, tone}
     pending: new Map(),        // midi -> {startBeat, tone, onCtx}
@@ -1298,7 +1300,9 @@
     if (!lp.cycleScheduled && lp.cycleStart <= ahead) {
       lp.notes.forEach(n => spawnVoice(n.midi, lp.cycleStart + n.startBeat * bd, n.durBeat * bd, n.tone));
       for (let b = 0; b < loopBeats(); b++) {
-        scheduleBeatFlash(lp.cycleStart + b * bd, b % lp.beatsPerBar, Math.floor(b / lp.beatsPerBar), false);
+        const t = lp.cycleStart + b * bd, beatInBar = b % lp.beatsPerBar;
+        if (lp.metro) metroClick(t, beatInBar === 0);   // audible but never recorded
+        scheduleBeatFlash(t, beatInBar, Math.floor(b / lp.beatsPerBar), false);
       }
       lp.cycleScheduled = true;
     }
@@ -1359,6 +1363,10 @@
     playBtn.disabled = !(lp.state === 'stopped' && lp.notes.length > 0);
     playBtn.style.opacity = playBtn.disabled ? '0.4' : '1';
     playBtn.style.cursor = playBtn.disabled ? 'default' : 'pointer';
+    // metronome toggle state
+    const metroBtn = document.getElementById('metroBtn');
+    metroBtn.textContent = lp.metro ? '🔊 메트로놈' : '🔇 메트로놈';
+    metroBtn.style.opacity = lp.metro ? '1' : '0.5';
   }
   function setBpm(v) { lp.bpm = Math.max(40, Math.min(240, v)); updateLooperUI(); }
   function setBars(v) {
@@ -1378,6 +1386,7 @@
   wire('playBtn',  () => looperPlay());
   wire('stopBtn',  () => looperStop());
   wire('clearBtn', () => looperClear());
+  wire('metroBtn', () => { lp.metro = !lp.metro; updateLooperUI(); });
   wire('bpmDown',  () => setBpm(lp.bpm - 4));
   wire('bpmUp',    () => setBpm(lp.bpm + 4));
   wire('barsDown', () => setBars(lp.bars - 1));
