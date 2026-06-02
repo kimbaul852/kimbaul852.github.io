@@ -54,6 +54,8 @@
       max(16px, env(safe-area-inset-right))
       max(16px, env(safe-area-inset-bottom))
       max(16px, env(safe-area-inset-left));
+    /* leave room for the fixed bottom transport bar */
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
   }
 
   /* ---------- app bar ---------- */
@@ -99,7 +101,36 @@
     font-size: 16px; caret-color: transparent; pointer-events: none;
   }
 
-  .controls { width: min(1100px, 97vw); display: flex; gap: 9px; flex-wrap: wrap; justify-content: center; align-items: flex-end; }
+  .controls { width: min(1100px, 97vw); display: flex; flex-direction: column; gap: 9px; align-items: center; }
+  .ctlmain, .ctladv { display: flex; gap: 9px; flex-wrap: wrap; justify-content: center; align-items: flex-end; }
+  .ctladv.collapsed { display: none; }
+  .advtoggle {
+    align-self: stretch; min-width: 64px;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 0 12px; color: var(--ink); cursor: pointer;
+    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+  }
+  .advtoggle:hover { border-color: rgba(255,174,59,0.5); }
+
+  /* ---------- fixed bottom transport ---------- */
+  .transport {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 9px max(16px, env(safe-area-inset-right))
+             calc(9px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    background: rgba(18,15,26,0.92); backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .transport .recdot { width: 12px; height: 12px; flex: none; }
+  .tpbtn {
+    flex: 1 1 0; max-width: 200px; min-height: 48px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+    color: var(--ink); border-radius: 12px; cursor: pointer;
+    font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700;
+    transition: transform 0.06s, background 0.12s, border-color 0.12s;
+  }
+  .tpbtn:active { transform: scale(0.96); }
+  .tpbtn.rec { background: rgba(255,93,143,0.16); border-color: rgba(255,93,143,0.5); color: var(--magenta); }
   .ctl {
     background: var(--panel);
     border: 1px solid rgba(255,255,255,0.07);
@@ -451,10 +482,6 @@
 <!-- looper / loop recorder -->
 <div class="looper" id="looper">
   <div class="lgroup">
-    <span class="recdot" id="recDot"></span>
-    <button class="tbtn" id="recBtn">● REC (SPACE)</button>
-    <button class="tbtn" id="playBtn">▶ PLAY</button>
-    <button class="tbtn" id="stopBtn">■ STOP</button>
     <button class="tbtn" id="undoBtn">↩ UNDO</button>
     <button class="tbtn" id="redoBtn">↪ REDO</button>
     <button class="tbtn" id="clearBtn">✕ CLEAR</button>
@@ -475,6 +502,14 @@
 
 <!-- track layers -->
 <div class="tracks" id="tracks"></div>
+
+<!-- fixed bottom transport (thumb-friendly) -->
+<div class="transport" id="transport">
+  <span class="recdot" id="recDot"></span>
+  <button class="tpbtn rec" id="recBtn">● REC</button>
+  <button class="tpbtn" id="playBtn">▶ PLAY</button>
+  <button class="tpbtn" id="stopBtn">■ STOP</button>
+</div>
 
 <!-- settings modal -->
 <div class="overlay" id="overlay">
@@ -892,33 +927,33 @@
 
   // ============ controls (mode-specific) ============
   const controls = document.getElementById('controls');
+  let advOpen = false;   // collapsible advanced controls (Octave/Shift/Transpose)
   function buildControls() {
-    if (mode === 'basic') {
-      controls.innerHTML = `
-        <div class="ctl"><label>Octave</label><div class="row">
-          <button data-act="octDown">−</button><span class="val" id="octVal">±0</span><button data-act="octUp">+</button></div></div>
-        <div class="ctl"><label>Shift Window</label><div class="row">
-          <button data-act="winDown">−</button><span class="val cyan" id="winVal">A = C4</span><button data-act="winUp">+</button></div></div>
-        <div class="ctl"><label>Transpose</label><div class="row">
-          <button data-act="trDown">−</button><span class="val mag" id="trVal">0</span><button data-act="trUp">+</button></div></div>
+    // advanced (less-used) performance controls — collapsible
+    const adv = mode === 'basic'
+      ? `<div class="ctl"><label>Octave</label><div class="row">
+           <button data-act="octDown">−</button><span class="val" id="octVal">±0</span><button data-act="octUp">+</button></div></div>
+         <div class="ctl"><label>Shift Window</label><div class="row">
+           <button data-act="winDown">−</button><span class="val cyan" id="winVal">A = C4</span><button data-act="winUp">+</button></div></div>
+         <div class="ctl"><label>Transpose</label><div class="row">
+           <button data-act="trDown">−</button><span class="val mag" id="trVal">0</span><button data-act="trUp">+</button></div></div>`
+      : `<div class="ctl"><label>아래 자리 ←→</label><div class="row">
+           <button data-act="loWinDown">−</button><span class="val cyan" id="loWinVal">Z=C4</span><button data-act="loWinUp">+</button></div></div>
+         <div class="ctl"><label>위 자리 ↑↓</label><div class="row">
+           <button data-act="upWinDown">−</button><span class="val mag" id="upWinVal">Q=F5</span><button data-act="upWinUp">+</button></div></div>
+         <div class="ctl"><label>Transpose (공통)</label><div class="row">
+           <button data-act="trDown">−</button><span class="val" id="trVal">0</span><button data-act="trUp">+</button></div></div>`;
+    // always-visible essentials: Volume, Tone (+ collapse toggle)
+    controls.innerHTML = `
+      <div class="ctlmain">
         <div class="ctl"><label>Volume</label><div class="row">
           <button data-act="volDown">−</button><span class="val" id="volVal">${Math.round(volume*100)}</span><button data-act="volUp">+</button></div></div>
         <div class="ctl"><label>Tone</label><div class="seg" id="toneSeg">
-          <button data-tone="grand">GRAND</button><button data-tone="electric">ELEC</button><button data-tone="synth">SYNTH</button></div></div>`;
-      syncBasicReadouts();
-    } else {
-      controls.innerHTML = `
-        <div class="ctl"><label>아래 자리 ←→</label><div class="row">
-          <button data-act="loWinDown">−</button><span class="val cyan" id="loWinVal">Z=C4</span><button data-act="loWinUp">+</button></div></div>
-        <div class="ctl"><label>위 자리 ↑↓</label><div class="row">
-          <button data-act="upWinDown">−</button><span class="val mag" id="upWinVal">Q=F5</span><button data-act="upWinUp">+</button></div></div>
-        <div class="ctl"><label>Transpose (공통)</label><div class="row">
-          <button data-act="trDown">−</button><span class="val" id="trVal">0</span><button data-act="trUp">+</button></div></div>
-        <div class="ctl"><label>Volume</label><div class="row">
-          <button data-act="volDown">−</button><span class="val" id="volVal">${Math.round(volume*100)}</span><button data-act="volUp">+</button></div></div>
-        <div class="ctl"><label>Tone</label><div class="seg" id="toneSeg">
-          <button data-tone="grand">GRAND</button><button data-tone="electric">ELEC</button><button data-tone="synth">SYNTH</button></div></div>`;
-    }
+          <button data-tone="grand">GRAND</button><button data-tone="electric">ELEC</button><button data-tone="synth">SYNTH</button></div></div>
+        <button class="advtoggle" id="advToggle">${advOpen ? '고급 ▴' : '고급 ▾'}</button>
+      </div>
+      <div class="ctladv${advOpen ? '' : ' collapsed'}" id="ctladv">${adv}</div>`;
+    if (mode === 'basic') syncBasicReadouts();
     // wire control buttons
     controls.querySelectorAll('button[data-act]').forEach(btn => {
       btn.onclick = () => { runAction(btn.dataset.act); refocusIfEnabled(); };
@@ -932,6 +967,12 @@
         setTone(b.dataset.tone); refocusIfEnabled();
       });
     }
+    controls.querySelector('#advToggle').onclick = e => {
+      advOpen = !advOpen;
+      controls.querySelector('#ctladv').classList.toggle('collapsed', !advOpen);
+      e.currentTarget.textContent = advOpen ? '고급 ▴' : '고급 ▾';
+      refocusIfEnabled();
+    };
     refreshControlReadouts();
   }
 
@@ -1617,11 +1658,11 @@
     document.getElementById('quantVal').textContent = QUANT_STEPS[quantIndex()].l;
     const recBtn = document.getElementById('recBtn');
     if (lp.state === 'stopped') {
-      recBtn.textContent = '● REC (SPACE)';
+      recBtn.textContent = '● REC';
       lpStatusEl.textContent = '정지 · SPACE로 녹음 (' + lp.tracks.length + '레이어 ' + totalNotes() + '음)';
-    } else if (lp.state === 'countin') recBtn.textContent = '● 카운트인…';
-    else if (lp.state === 'recording') recBtn.textContent = '● 녹음 중 (SPACE=재생)';
-    else if (lp.state === 'playing') recBtn.textContent = '▶ 재생 중 (SPACE=덧녹음)';
+    } else if (lp.state === 'countin') recBtn.textContent = '● …';
+    else if (lp.state === 'recording') recBtn.textContent = '● 녹음중';
+    else if (lp.state === 'playing') recBtn.textContent = '▶ 덧녹음';
     dim(document.getElementById('playBtn'),   !(lp.state === 'stopped' && hasNotes()));
     dim(document.getElementById('undoBtn'),   !((lp.state === 'stopped' || lp.state === 'playing') && lp.tracks.length));
     dim(document.getElementById('redoBtn'),   !lp.undone.length);
