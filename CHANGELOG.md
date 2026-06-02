@@ -3,6 +3,13 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [9] - 2026-06-02
+### 변경 / Changed
+- 🎛️ 연주 컨트롤 정리 — **Volume·Tone만 항상 노출**, Octave/Shift/Transpose는 **접이식 "고급" 패널**로 (기본 접힘)
+  Performance controls tidied — **Volume·Tone always visible**; Octave/Shift/Transpose moved into a **collapsible "advanced" panel** (collapsed by default)
+- 📱 **하단 고정 트랜스포트 바** — REC/PLAY/STOP을 화면 하단에 고정해 모바일에서 엄지로 누르기 쉽게
+  **Fixed bottom transport bar** — REC/PLAY/STOP pinned to the bottom for easy thumb access on mobile
+
 ## [8] - 2026-06-02
 ### 추가 / Added
 - 🥁 **퀀타이즈** — 녹음한 음을 1/4·1/8·1/16 그리드에 자동 정렬 (OFF 포함, 비파괴 방식)
