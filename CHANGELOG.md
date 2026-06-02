@@ -3,6 +3,15 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [10] - 2026-06-02
+### 추가 / Added
+- 🎼 **악보 보기 모드** — 악보 이미지를 업로드해 크게 보며 키보드 단축키로 연주 (앱바 악보 아이콘으로 토글)
+  **Sheet music view** — upload a sheet image to read it large while playing via keyboard shortcuts (toggle with the sheet icon in the app bar)
+  - 악보 모드에서는 온스크린 건반·연주 컨트롤·루퍼 패널을 숨겨 악보에 집중
+    In sheet view the on-screen piano, performance controls, and looper panel are hidden to focus on the score
+  - 확대/축소(50–300%), 제거 지원. 이미지는 자동 다운스케일 후 별도 키로 저장되어 새로고침해도 유지
+    Zoom (50–300%) and remove; the image is auto-downscaled and saved under its own key so it persists across reloads
+
 ## [9] - 2026-06-02
 ### 변경 / Changed
 - 🎛️ 연주 컨트롤 정리 — **Volume·Tone만 항상 노출**, Octave/Shift/Transpose는 **접이식 "고급" 패널**로 (기본 접힘)
