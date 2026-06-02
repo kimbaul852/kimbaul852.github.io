@@ -46,13 +46,50 @@
       radial-gradient(800px 600px at 90% 110%, rgba(75,227,210,0.10), transparent 60%),
       var(--bg);
     display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 14px;
+    align-items: center; justify-content: flex-start;
+    gap: 12px;
+    overflow-y: auto;
     padding:
-      max(16px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-top))
       max(16px, env(safe-area-inset-right))
       max(16px, env(safe-area-inset-bottom))
       max(16px, env(safe-area-inset-left));
+  }
+
+  /* ---------- app bar ---------- */
+  .appbar {
+    width: min(1100px, 97vw);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 2px;
+  }
+  .brand {
+    font-weight: 800; font-size: clamp(22px, 5vw, 34px); letter-spacing: -0.04em;
+    background: linear-gradient(100deg, var(--amber), var(--magenta) 55%, var(--cyan));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .appbar-actions { display: flex; align-items: center; gap: 9px; }
+  .iconbtn {
+    width: 42px; height: 42px; border-radius: 12px; cursor: pointer; flex: none;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.08);
+    color: var(--ink); display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s, transform 0.06s;
+  }
+  .iconbtn:hover { border-color: rgba(255,174,59,0.5); }
+  .iconbtn:active { transform: scale(0.92); }
+
+  /* ---------- settings rows ---------- */
+  .setrow {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin: 12px 0 18px;
+  }
+  .setlabel { font-size: 14px; font-weight: 700; line-height: 1.3; }
+  .setlabel .setsub {
+    font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.08em;
+    color: var(--dim); font-weight: 400;
+  }
+  .setsection {
+    font-size: 15px; font-weight: 800; letter-spacing: -0.01em;
+    margin: 6px 0 2px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);
   }
 
   #capture {
@@ -62,26 +99,7 @@
     font-size: 16px; caret-color: transparent; pointer-events: none;
   }
 
-  header {
-    width: min(1100px, 97vw);
-    display: flex; align-items: flex-end;
-    justify-content: space-between; gap: 18px;
-  }
-  .title { line-height: 0.85; }
-  .title h1 {
-    font-size: clamp(28px, 6vw, 64px);
-    font-weight: 800; letter-spacing: -0.04em;
-    background: linear-gradient(100deg, var(--amber), var(--magenta) 55%, var(--cyan));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-  }
-  .title p {
-    margin-top: 8px;
-    font-family: 'Space Mono', monospace;
-    font-size: 11px; letter-spacing: 0.3em;
-    color: var(--dim); text-transform: uppercase;
-  }
-
-  .controls { display: flex; gap: 9px; flex-wrap: wrap; justify-content: flex-end; align-items: flex-end; }
+  .controls { width: min(1100px, 97vw); display: flex; gap: 9px; flex-wrap: wrap; justify-content: center; align-items: flex-end; }
   .ctl {
     background: var(--panel);
     border: 1px solid rgba(255,255,255,0.07);
@@ -125,12 +143,6 @@
   .seg button.on { background: var(--cyan); color: #06120f; font-weight: 700; }
   .seg.mag button.on { background: var(--magenta); color: #2a0010; }
 
-  .modebar {
-    width: min(1100px, 97vw);
-    display: flex; align-items: center;
-    justify-content: space-between; gap: 12px; flex-wrap: wrap;
-  }
-  .leftgroup { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
   .armbtn {
     display: inline-flex; align-items: center; gap: 10px;
     background: var(--panel);
@@ -149,8 +161,8 @@
   .armbtn.armed { border-color: rgba(75,227,210,0.55); background: rgba(75,227,210,0.07); }
   .armbtn.armed .dot { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
   .armbtn.hit .dot { background: var(--amber); box-shadow: 0 0 12px var(--amber); }
-  .armbtn .lbl::after { content: '키보드 입력 OFF · 탭해서 켜기'; }
-  .armbtn.armed .lbl::after { content: '키보드 입력 ON · 탭해서 끄기'; }
+  .armbtn .lbl::after { content: '키보드 OFF'; }
+  .armbtn.armed .lbl::after { content: '키보드 ON'; }
 
   .modetoggle {
     display: flex;
@@ -169,9 +181,10 @@
   .modetoggle button.on { background: var(--amber); color: #2a1800; font-weight: 700; }
 
   .hint {
+    width: min(1100px, 97vw);
     font-family: 'Space Mono', monospace;
     font-size: 10px; color: var(--dim);
-    letter-spacing: 0.05em; text-align: right; line-height: 1.7;
+    letter-spacing: 0.05em; text-align: center; line-height: 1.7;
   }
   .hint b { color: var(--cyan); }
   .hint .mag { color: var(--magenta); }
@@ -312,15 +325,6 @@
   .modal .foot button.primary { background: var(--amber); color: #2a1800; border-color: var(--amber); }
   .modal .warn { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--magenta); margin-top: 10px; min-height: 14px; }
   .modal .note { font-family: 'Space Mono', monospace; font-size: 9.5px; color: var(--dim); margin-top: 14px; line-height: 1.6; }
-  .keysbtn {
-    background: var(--panel);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px; padding: 0 13px; height: 54px;
-    color: var(--ink); cursor: pointer;
-    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.1em;
-    display: flex; align-items: center; gap: 7px;
-  }
-  .keysbtn:hover { border-color: rgba(255,174,59,0.5); }
 
   /* ---------- looper ---------- */
   .looper {
@@ -330,7 +334,7 @@
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 14px; padding: 10px 14px;
   }
-  .looper .lgroup { display: flex; align-items: center; gap: 8px; }
+  .looper .lgroup { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .recdot {
     width: 12px; height: 12px; border-radius: 50%;
     background: var(--dim); transition: background 0.15s, box-shadow 0.15s;
@@ -384,29 +388,22 @@
 <input id="capture" type="text" inputmode="text"
        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
-<header>
-  <div class="title">
-    <h1>KEYS</h1>
-    <p>type to play · keyboard piano</p>
-  </div>
-  <div class="controls" id="controls"><!-- mode-specific controls injected here --></div>
-</header>
-
-<div class="modebar">
-  <div class="leftgroup">
+<div class="appbar">
+  <div class="brand">KEYS</div>
+  <div class="appbar-actions">
     <button class="armbtn" id="armBtn"><span class="dot"></span><span class="lbl"></span></button>
-    <div class="modetoggle" id="modeToggle">
-      <button data-mode="basic" class="on">기본</button>
-      <button data-mode="extended">확장 2줄</button>
-    </div>
-    <button class="keysbtn" id="openKeys">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
-      </svg>단축키
+    <button class="iconbtn" id="openSettings" aria-label="설정 / Settings" title="설정 / Settings">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
     </button>
   </div>
-  <div class="hint" id="hintText"></div>
 </div>
+
+<div class="controls" id="controls"><!-- mode-specific controls injected here --></div>
+
+<div class="hint" id="hintText"></div>
 
 <div class="stage">
   <div class="feltbar"></div>
@@ -442,10 +439,21 @@
   <div class="status" id="lpStatus">정지 · SPACE로 카운트인 후 녹음</div>
 </div>
 
-<!-- shortcuts modal -->
+<!-- settings modal -->
 <div class="overlay" id="overlay">
   <div class="modal">
-    <h2>단축키 설정</h2>
+    <h2>설정 / Settings</h2>
+    <div class="sub">키보드 레이아웃과 단축키를 설정합니다 / Keyboard layout & shortcuts</div>
+
+    <div class="setrow">
+      <div class="setlabel">키보드 레이아웃<br><span class="setsub">Keyboard layout</span></div>
+      <div class="modetoggle" id="modeToggle">
+        <button data-mode="basic" class="on">기본</button>
+        <button data-mode="extended">확장 2줄</button>
+      </div>
+    </div>
+
+    <h3 class="setsection">단축키 / Shortcuts</h3>
     <div class="sub">기능 키 캡을 누른 뒤 원하는 키를 누르세요 · 연주 건반은 고정</div>
     <div id="bindList"></div>
     <div class="warn" id="bindWarn"></div>
@@ -1035,6 +1043,9 @@
     rebuildActionMap();
     buildMode();
     PLAY = playKeySet();
+    // the mode toggle now lives inside the settings modal — refresh its
+    // shortcut list (bindings differ per mode) while it is open
+    if (overlay.classList.contains('show')) renderBindings();
     refocusIfEnabled();
   });
 
@@ -1097,7 +1108,7 @@
     listening = null; bindWarn.textContent = '';
     renderBindings(); updateHint();
   }, true);
-  document.getElementById('openKeys').onclick = () => { renderBindings(); overlay.classList.add('show'); focusCapture(); };
+  document.getElementById('openSettings').onclick = () => { renderBindings(); overlay.classList.add('show'); focusCapture(); };
   document.getElementById('closeKeys').onclick = () => { overlay.classList.remove('show'); listening = null; refocusIfEnabled(); };
   document.getElementById('resetKeys').onclick = () => {
     bindings[mode] = JSON.parse(JSON.stringify(DEFAULT_BINDINGS[mode]));

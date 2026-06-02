@@ -3,6 +3,17 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [7] - 2026-06-02
+### 변경 / Changed
+- UI 재배치: 큰 제목/설명을 제거하고 상단 **앱바**(KEYS 브랜드 · 키보드 ON/OFF · 설정)로 정리 (PR #7)
+  UI restructure: removed the large heading/description in favor of a top **app bar** (KEYS brand · keyboard on/off · settings) (PR #7)
+### 추가 / Added
+- ⚙ **설정 패널** — 키보드 레이아웃(기본/확장 2줄)과 단축키 매핑을 한곳에 모음
+  ⚙ **Settings panel** — keyboard layout (basic/extended) and shortcut mapping in one place
+### 수정 / Fixed
+- 모바일에서 루퍼 버튼(메트로놈 등)이 화면 밖으로 넘치던 문제 — 버튼이 줄바꿈되도록 수정
+  Looper buttons (e.g. metronome) overflowing off-screen on mobile — now wrap to the next line
+
 ## [4] - 2026-06-02
 ### 변경 / Changed
 - 메트로놈이 카운트인 이후에도 **매 박마다 계속 소리**가 나도록 변경 (PR #4)
