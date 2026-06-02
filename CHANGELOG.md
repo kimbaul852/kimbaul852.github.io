@@ -3,6 +3,21 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [8] - 2026-06-02
+### 추가 / Added
+- 🥁 **퀀타이즈** — 녹음한 음을 1/4·1/8·1/16 그리드에 자동 정렬 (OFF 포함, 비파괴 방식)
+  **Quantize** — snap recorded notes to a 1/4·1/8·1/16 grid (incl. OFF, non-destructive)
+- ⏱️ **카운트인 ON/OFF + 마디 수(1–4) 선택** (설정 패널)
+  **Count-in on/off + bar count (1–4)** selection (settings panel)
+- 🎚️ **멀티 트랙(레이어)** — 녹음 패스마다 새 레이어 생성, 트랙별 **음색 전환·음소거·삭제**
+  **Multi-track layers** — each recording pass becomes a layer with per-track **tone / mute / delete**
+- ⬇ **WAV 내보내기** — 현재 루프(음소거 제외)를 오프라인 렌더링해 keys-loop.wav로 저장
+  **WAV export** — offline-renders the current loop (excluding muted tracks) to keys-loop.wav
+- ↩ **언두 / ↪ 리두** — 마지막 레이어 되돌리기/복원
+  **Undo / Redo** — remove or restore the most recent layer
+- 💾 **자동 저장(localStorage)** — BPM·박자·단축키·레이아웃·녹음 레이어를 새로고침 후에도 유지
+  **Auto-save (localStorage)** — BPM, time signature, shortcuts, layout, and recorded layers persist across reloads
+
 ## [7] - 2026-06-02
 ### 변경 / Changed
 - UI 재배치: 큰 제목/설명을 제거하고 상단 **앱바**(KEYS 브랜드 · 키보드 ON/OFF · 설정)로 정리 (PR #7)

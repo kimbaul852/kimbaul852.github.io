@@ -377,6 +377,35 @@
     margin-left: auto; min-width: 180px; text-align: right;
   }
 
+  /* ---------- track layers ---------- */
+  .tracks {
+    width: min(1100px, 97vw);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .tracks:empty { display: none; }
+  .track {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px; padding: 7px 11px;
+  }
+  .track.muted { opacity: 0.5; }
+  .track .tcolor { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .track .tname {
+    font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;
+    color: var(--ink); white-space: nowrap;
+  }
+  .track .tinfo { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--dim); }
+  .track .tspacer { flex: 1; }
+  .track button {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--ink); border-radius: 7px; padding: 4px 9px; cursor: pointer;
+    font-family: 'Space Mono', monospace; font-size: 10px; white-space: nowrap;
+  }
+  .track button:hover { border-color: rgba(255,174,59,0.5); }
+  .track button.on { background: var(--cyan); color: #06120f; border-color: var(--cyan); font-weight: 700; }
+
   @media (max-width: 640px) {
     .controls { width: 100%; }
     .hint { text-align: left; }
@@ -426,7 +455,10 @@
     <button class="tbtn" id="recBtn">● REC (SPACE)</button>
     <button class="tbtn" id="playBtn">▶ PLAY</button>
     <button class="tbtn" id="stopBtn">■ STOP</button>
+    <button class="tbtn" id="undoBtn">↩ UNDO</button>
+    <button class="tbtn" id="redoBtn">↪ REDO</button>
     <button class="tbtn" id="clearBtn">✕ CLEAR</button>
+    <button class="tbtn" id="exportBtn">⬇ WAV</button>
     <button class="tbtn" id="metroBtn">🔊 메트로놈</button>
   </div>
   <div class="lcol"><label>BPM</label><div class="stepper">
@@ -435,9 +467,14 @@
     <button id="barsDown">−</button><span class="lval" id="barsVal">4</span><button id="barsUp">+</button></div></div>
   <div class="lcol"><label>박자 BEAT</label><div class="stepper">
     <button id="beatDown">−</button><span class="lval" id="beatVal">4/4</span><button id="beatUp">+</button></div></div>
+  <div class="lcol"><label>퀀타이즈 QUANT</label><div class="stepper">
+    <button id="quantDown">−</button><span class="lval cyan" id="quantVal">OFF</span><button id="quantUp">+</button></div></div>
   <div class="beatdots" id="beatDots"></div>
   <div class="status" id="lpStatus">정지 · SPACE로 카운트인 후 녹음</div>
 </div>
+
+<!-- track layers -->
+<div class="tracks" id="tracks"></div>
 
 <!-- settings modal -->
 <div class="overlay" id="overlay">
@@ -450,6 +487,21 @@
       <div class="modetoggle" id="modeToggle">
         <button data-mode="basic" class="on">기본</button>
         <button data-mode="extended">확장 2줄</button>
+      </div>
+    </div>
+
+    <h3 class="setsection">녹음 / Recording</h3>
+    <div class="setrow">
+      <div class="setlabel">카운트인<br><span class="setsub">Count-in metronome</span></div>
+      <div class="modetoggle" id="countInToggle">
+        <button data-ci="on" class="on">ON</button>
+        <button data-ci="off">OFF</button>
+      </div>
+    </div>
+    <div class="setrow">
+      <div class="setlabel">카운트인 마디<br><span class="setsub">Count-in bars</span></div>
+      <div class="stepper">
+        <button id="countBarsDown">−</button><span class="lval" id="countBarsVal">1</span><button id="countBarsUp">+</button>
       </div>
     </div>
 
@@ -889,11 +941,13 @@
     const el = document.getElementById('volVal');
     if (el) el.textContent = Math.round(volume * 100);
     if (masterGain) masterGain.gain.value = volume;
+    scheduleSave();
   }
   function setTone(name) {
     tone = name;
     const seg = controls.querySelector('#toneSeg');
     if (seg) seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.tone === name));
+    scheduleSave();
   }
 
   function syncBasicReadouts() {
@@ -1046,6 +1100,7 @@
     // the mode toggle now lives inside the settings modal — refresh its
     // shortcut list (bindings differ per mode) while it is open
     if (overlay.classList.contains('show')) renderBindings();
+    updateLooperUI(); scheduleSave();
     refocusIfEnabled();
   });
 
@@ -1106,13 +1161,13 @@
     bindings[mode][listening.fn][listening.idx] = k;
     rebuildActionMap();
     listening = null; bindWarn.textContent = '';
-    renderBindings(); updateHint();
+    renderBindings(); updateHint(); scheduleSave();
   }, true);
-  document.getElementById('openSettings').onclick = () => { renderBindings(); overlay.classList.add('show'); focusCapture(); };
+  document.getElementById('openSettings').onclick = () => { renderBindings(); syncSettingsUI(); overlay.classList.add('show'); focusCapture(); };
   document.getElementById('closeKeys').onclick = () => { overlay.classList.remove('show'); listening = null; refocusIfEnabled(); };
   document.getElementById('resetKeys').onclick = () => {
     bindings[mode] = JSON.parse(JSON.stringify(DEFAULT_BINDINGS[mode]));
-    rebuildActionMap(); renderBindings(); updateHint();
+    rebuildActionMap(); renderBindings(); updateHint(); scheduleSave();
     bindWarn.textContent = '기본값으로 되돌렸습니다';
   };
   overlay.addEventListener('click', e => {
@@ -1149,18 +1204,31 @@
     }
   }
 
-  // ============ looper (loop recorder) ============
+  // ============ looper (multi-track loop recorder) ============
   // Records the notes you PLAY (keyboard or pointer) into a fixed-length loop.
+  // Each recording pass becomes its own TRACK (layer), so you can build
+  // bass + chords + melody and mute/delete/undo each layer independently.
   // Timing is stored in BEATS so changing BPM rescales playback naturally.
-  // Count-in plays an audible metronome for one bar; after that the beat is
-  // purely a visual blink. Only your piano notes go into the loop — never the
-  // metronome, and playback uses its own voices so it is never re-recorded.
+  // Only your piano notes go into a track — never the metronome — and playback
+  // uses its own voices so it is never re-recorded.
+  const QUANT_STEPS = [
+    { b: 0,    l: 'OFF'  },
+    { b: 1,    l: '1/4'  },
+    { b: 0.5,  l: '1/8'  },
+    { b: 0.25, l: '1/16' }
+  ];
+  const TRACK_COLORS = ['#ffae3b', '#4be3d2', '#ff5d8f', '#a78bfa', '#8be04e', '#5ab0ff', '#ff8f5d'];
+  const TONE_LABEL = { grand: 'GRAND', electric: 'ELEC', synth: 'SYNTH' };
   const lp = {
     bpm: 100, bars: 4, beatsPerBar: 4,
     metro: true,               // audible metronome on every beat (never recorded)
+    quant: 0,                  // quantize grid in beats (0 = off)
+    countIn: true, countBars: 1,
     state: 'stopped',          // stopped | countin | recording | playing
-    notes: [],                 // {startBeat, durBeat, midi, tone}
-    pending: new Map(),        // midi -> {startBeat, tone, onCtx}
+    tracks: [],                // [{ notes:[{startBeat,durBeat,midi}], tone, muted }]
+    recTrack: null,            // track currently being recorded into
+    undone: [],                // redo stack of removed tracks
+    pending: new Map(),        // midi -> {midi, startBeat, onCtx}
     cycleStart: 0,             // ctx time at which the current loop cycle began
     cycleScheduled: false,
     schedTimer: null,
@@ -1170,12 +1238,20 @@
   const beatDurNow = () => 60 / lp.bpm;
   const loopBeats  = () => lp.bars * lp.beatsPerBar;
   const loopDurNow = () => loopBeats() * beatDurNow();
+  const totalNotes = () => lp.tracks.reduce((s, t) => s + t.notes.length, 0);
+  const hasNotes   = () => lp.tracks.some(t => t.notes.length);
+  // quantized start beat (snap to grid, wrapped into the loop)
+  function noteStartBeat(n) {
+    if (!lp.quant) return n.startBeat;
+    const lb = loopBeats();
+    let q = Math.round(n.startBeat / lp.quant) * lp.quant;
+    return ((q % lb) + lb) % lb;
+  }
 
-  // --- standalone playback voice (bypasses the live `active` map) ---
-  function spawnVoice(midi, startTime, dur, toneName) {
-    ensureAudio();
-    const cfg = TONES[toneName] || TONES[tone];
-    const g = actx.createGain(); g.connect(masterGain);
+  // --- build a voice on any context (live or offline render) ---
+  function buildVoice(ctx, dest, midi, startTime, dur, toneName) {
+    const cfg = TONES[toneName] || TONES.grand;
+    const g = ctx.createGain(); g.connect(dest);
     const d = Math.max(dur, 0.05);
     const relStart = startTime + d, rel = 0.26;
     g.gain.setValueAtTime(0.0001, startTime);
@@ -1184,14 +1260,18 @@
     g.gain.exponentialRampToValueAtTime(0.0001, relStart + rel);
     const oscs = [];
     cfg.types.forEach((t, i) => {
-      const o = actx.createOscillator();
+      const o = ctx.createOscillator();
       o.type = t; o.frequency.value = f2(midi);
       o.detune.value = cfg.detune ? (i ? cfg.detune : -cfg.detune) : 0;
-      const og = actx.createGain(); og.gain.value = cfg.mix[i];
+      const og = ctx.createGain(); og.gain.value = cfg.mix[i];
       o.connect(og); og.connect(g); o.start(startTime); o.stop(relStart + rel + 0.05);
       oscs.push(o);
     });
-    lp.voices.push({ oscs, g, end: relStart + rel + 0.05 });
+    return { oscs, g, end: relStart + rel + 0.05 };
+  }
+  function spawnVoice(midi, startTime, dur, toneName) {
+    ensureAudio();
+    lp.voices.push(buildVoice(actx, masterGain, midi, startTime, dur, toneName));
   }
   function fadeLooperVoices() {
     if (!actx) return;
@@ -1207,7 +1287,7 @@
     lp.voices = [];
   }
 
-  // --- metronome click (count-in only) ---
+  // --- metronome click ---
   function metroClick(time, accent) {
     ensureAudio();
     const o = actx.createOscillator(), g = actx.createGain();
@@ -1219,12 +1299,18 @@
     o.start(time); o.stop(time + 0.08);
   }
 
-  // --- recording hooks (called from the note-input sites) ---
+  // --- recording into the current track ---
+  function startRecTrack() {
+    lp.recTrack = { notes: [], tone: tone, muted: false };
+    lp.tracks.push(lp.recTrack);
+    lp.undone = [];            // a fresh recording invalidates redo
+    renderTracks();
+  }
   function recordNoteOn(midi) {
-    if (lp.state !== 'recording' || !actx) return;
+    if (lp.state !== 'recording' || !lp.recTrack || !actx) return;
     const ld = loopDurNow();
     const rel = (((actx.currentTime - lp.cycleStart) % ld) + ld) % ld;
-    lp.pending.set(midi, { midi, startBeat: rel / beatDurNow(), tone, onCtx: actx.currentTime });
+    lp.pending.set(midi, { midi, startBeat: rel / beatDurNow(), onCtx: actx.currentTime });
   }
   function recordNoteOff(midi) {
     if (!actx) return;
@@ -1234,44 +1320,63 @@
     pushNote(p, actx.currentTime);
   }
   function pushNote(p, offCtx) {
+    if (!lp.recTrack) return;
     const ld = loopDurNow();
     let durSec = offCtx - p.onCtx;
     if (durSec < 0) durSec += ld;
     durSec = Math.min(durSec, ld * 0.98);
     if (durSec < 0.05) durSec = 0.12;
-    lp.notes.push({ startBeat: p.startBeat, durBeat: durSec / beatDurNow(), midi: p.midi, tone: p.tone });
+    lp.recTrack.notes.push({ startBeat: p.startBeat, durBeat: durSec / beatDurNow(), midi: p.midi });
   }
   function finalizePending() {
-    if (!actx) { lp.pending.clear(); return; }
-    const now = actx.currentTime;
-    lp.pending.forEach(p => pushNote(p, now));
+    if (actx) { const now = actx.currentTime; lp.pending.forEach(p => pushNote(p, now)); }
     lp.pending.clear();
+  }
+  // drop the just-recorded track if it captured nothing
+  function dropEmptyRecTrack() {
+    if (lp.recTrack && lp.recTrack.notes.length === 0) {
+      const i = lp.tracks.indexOf(lp.recTrack);
+      if (i >= 0) lp.tracks.splice(i, 1);
+    }
+    lp.recTrack = null;
+    renderTracks();
   }
 
   // --- transport (SPACE drives this via looperToggle) ---
   function looperToggle() {
     if (lp.state === 'stopped') looperStart();
     else if (lp.state === 'countin') looperStop();
-    else if (lp.state === 'recording') { finalizePending(); lp.state = 'playing'; updateLooperUI(); }
-    else if (lp.state === 'playing') { lp.state = 'recording'; updateLooperUI(); }
+    else if (lp.state === 'recording') {            // stop recording this layer -> play
+      finalizePending(); dropEmptyRecTrack();
+      lp.state = 'playing'; updateLooperUI(); scheduleSave();
+    } else if (lp.state === 'playing') {            // start a new overdub layer
+      lp.state = 'recording'; startRecTrack(); updateLooperUI();
+    }
   }
   function looperStart() {
     ensureAudio();
     if (actx.state === 'suspended') actx.resume();
     const bd = beatDurNow(), start = actx.currentTime + 0.15;
-    // one bar of audible count-in (+ visual)
-    for (let i = 0; i < lp.beatsPerBar; i++) {
-      metroClick(start + i * bd, i === 0);
-      scheduleBeatFlash(start + i * bd, i, -1, true);
+    if (lp.countIn) {
+      const clicks = lp.countBars * lp.beatsPerBar;
+      for (let i = 0; i < clicks; i++) {
+        metroClick(start + i * bd, i % lp.beatsPerBar === 0);
+        scheduleBeatFlash(start + i * bd, i % lp.beatsPerBar, -1, true);
+      }
+      lp.cycleStart = start + clicks * bd;
+      lp.state = 'countin';
+    } else {
+      lp.cycleStart = start;
+      lp.state = 'recording';
+      startRecTrack();
     }
-    lp.cycleStart = start + lp.beatsPerBar * bd;
     lp.cycleScheduled = false;
-    lp.state = 'countin';
     startScheduler();
     updateLooperUI();
   }
   function looperStop() {
     finalizePending();
+    if (lp.recTrack) dropEmptyRecTrack();
     lp.state = 'stopped';
     if (lp.schedTimer) { clearInterval(lp.schedTimer); lp.schedTimer = null; }
     lp.timers.forEach(t => clearTimeout(t)); lp.timers = [];
@@ -1279,15 +1384,16 @@
     lp.cycleScheduled = false;
     resetBeatDots();
     updateLooperUI();
+    scheduleSave();
   }
   function looperClear() {
     looperStop();
-    lp.notes = [];
-    updateLooperUI();
+    lp.tracks = []; lp.recTrack = null; lp.undone = [];
+    renderTracks(); updateLooperUI(); scheduleSave();
   }
-  // play back the recorded loop (no count-in, no recording) — loops until STOP
+  // play back recorded layers (no count-in, no recording) — loops until STOP
   function looperPlay() {
-    if (lp.state !== 'stopped' || !lp.notes.length) return;
+    if (lp.state !== 'stopped' || !hasNotes()) return;
     ensureAudio();
     if (actx.state === 'suspended') actx.resume();
     lp.cycleStart = actx.currentTime + 0.12;
@@ -1295,6 +1401,18 @@
     lp.state = 'playing';
     startScheduler();
     updateLooperUI();
+  }
+  // undo = remove most recent layer; redo = restore it
+  function looperUndo() {
+    if (lp.state === 'recording' || lp.state === 'countin') return;
+    if (!lp.tracks.length) return;
+    lp.undone.push(lp.tracks.pop());
+    renderTracks(); updateLooperUI(); scheduleSave();
+  }
+  function looperRedo() {
+    if (!lp.undone.length) return;
+    lp.tracks.push(lp.undone.pop());
+    renderTracks(); updateLooperUI(); scheduleSave();
   }
 
   function startScheduler() {
@@ -1306,10 +1424,15 @@
     if (!actx || lp.state === 'stopped') return;
     const now = actx.currentTime, ahead = now + 0.12;
     const bd = beatDurNow(), ld = loopDurNow();
-    if (lp.state === 'countin' && now >= lp.cycleStart) { lp.state = 'recording'; updateLooperUI(); }
+    if (lp.state === 'countin' && now >= lp.cycleStart) {
+      lp.state = 'recording'; startRecTrack(); updateLooperUI();
+    }
     // schedule a whole cycle's playback + beat visuals once, just before it starts
     if (!lp.cycleScheduled && lp.cycleStart <= ahead) {
-      lp.notes.forEach(n => spawnVoice(n.midi, lp.cycleStart + n.startBeat * bd, n.durBeat * bd, n.tone));
+      lp.tracks.forEach(tr => {
+        if (tr.muted || tr === lp.recTrack) return;   // don't echo the layer being cut
+        tr.notes.forEach(n => spawnVoice(n.midi, lp.cycleStart + noteStartBeat(n) * bd, n.durBeat * bd, tr.tone));
+      });
       for (let b = 0; b < loopBeats(); b++) {
         const t = lp.cycleStart + b * bd, beatInBar = b % lp.beatsPerBar;
         if (lp.metro) metroClick(t, beatInBar === 0);   // audible but never recorded
@@ -1318,7 +1441,6 @@
       lp.cycleScheduled = true;
     }
     if (now >= lp.cycleStart + ld) { lp.cycleStart += ld; lp.cycleScheduled = false; }
-    // drop finished voices so they can be garbage-collected
     if (lp.voices.length > 64) lp.voices = lp.voices.filter(v => v.end > now);
   }
 
@@ -1337,8 +1459,8 @@
       setTimeout(() => { if (dots[beatInBar]) dots[beatInBar].classList.remove('on'); }, off);
     }
     if (isCountIn) lpStatusEl.textContent = '카운트인… ' + (beatInBar + 1) + '/' + lp.beatsPerBar;
-    else if (lp.state === 'recording') lpStatusEl.textContent = '● 녹음 중 · 마디 ' + (barIndex + 1) + '/' + lp.bars;
-    else if (lp.state === 'playing') lpStatusEl.textContent = '▶ 재생 · 마디 ' + (barIndex + 1) + '/' + lp.bars + ' · ' + lp.notes.length + '음';
+    else if (lp.state === 'recording') lpStatusEl.textContent = '● 녹음 중(레이어 ' + lp.tracks.length + ') · 마디 ' + (barIndex + 1) + '/' + lp.bars;
+    else if (lp.state === 'playing') lpStatusEl.textContent = '▶ 재생 · 마디 ' + (barIndex + 1) + '/' + lp.bars + ' · ' + lp.tracks.length + '레이어 ' + totalNotes() + '음';
   }
   function resetBeatDots() {
     const dots = beatDotsEl.children;
@@ -1353,41 +1475,173 @@
     }
   }
 
+  // --- track layers UI ---
+  const tracksEl = document.getElementById('tracks');
+  function renderTracks() {
+    tracksEl.innerHTML = '';
+    lp.tracks.forEach((tr, i) => {
+      const row = document.createElement('div');
+      row.className = 'track' + (tr.muted ? ' muted' : '');
+      const color = TRACK_COLORS[i % TRACK_COLORS.length];
+      row.innerHTML =
+        '<span class="tcolor" style="background:' + color + '"></span>' +
+        '<span class="tname">T' + (i + 1) + '</span>' +
+        '<span class="tinfo">' + tr.notes.length + '음</span>' +
+        '<span class="tspacer"></span>' +
+        '<button data-act="tone">' + (TONE_LABEL[tr.tone] || 'GRAND') + '</button>' +
+        '<button data-act="mute" class="' + (tr.muted ? '' : 'on') + '">' + (tr.muted ? '🔇' : '🔊') + '</button>' +
+        '<button data-act="del">🗑</button>';
+      row.querySelector('[data-act="tone"]').onclick = e => { e.currentTarget.blur(); trackCycleTone(i); refocusIfEnabled(); };
+      row.querySelector('[data-act="mute"]').onclick = e => { e.currentTarget.blur(); trackMute(i); refocusIfEnabled(); };
+      row.querySelector('[data-act="del"]').onclick  = e => { e.currentTarget.blur(); trackDelete(i); refocusIfEnabled(); };
+      tracksEl.appendChild(row);
+    });
+  }
+  function trackMute(i) { const t = lp.tracks[i]; if (!t) return; t.muted = !t.muted; renderTracks(); scheduleSave(); }
+  function trackDelete(i) { if (!lp.tracks[i]) return; lp.tracks.splice(i, 1); renderTracks(); updateLooperUI(); scheduleSave(); }
+  function trackCycleTone(i) {
+    const order = ['grand', 'electric', 'synth'], t = lp.tracks[i]; if (!t) return;
+    t.tone = order[(order.indexOf(t.tone) + 1) % order.length];
+    renderTracks(); scheduleSave();
+  }
+
+  // --- export current loop to a WAV download ---
+  async function exportWav() {
+    if (!hasNotes() || lp.state === 'recording' || lp.state === 'countin') return;
+    lpStatusEl.textContent = 'WAV 내보내는 중…';
+    try {
+      const sr = 44100, bd = beatDurNow(), dur = loopDurNow();
+      const off = new OfflineAudioContext(2, Math.max(1, Math.ceil(sr * dur)), sr);
+      const master = off.createGain(); master.gain.value = volume;
+      const comp = off.createDynamicsCompressor();
+      master.connect(comp); comp.connect(off.destination);
+      lp.tracks.forEach(tr => {
+        if (tr.muted) return;
+        tr.notes.forEach(n => buildVoice(off, master, n.midi, noteStartBeat(n) * bd, n.durBeat * bd, tr.tone));
+      });
+      const rendered = await off.startRendering();
+      downloadBlob(audioBufferToWav(rendered), 'keys-loop.wav');
+      lpStatusEl.textContent = '✓ WAV 저장됨 (keys-loop.wav)';
+    } catch (e) {
+      lpStatusEl.textContent = 'WAV 내보내기 실패';
+    }
+  }
+  function audioBufferToWav(buf) {
+    const numCh = buf.numberOfChannels, len = buf.length, sr = buf.sampleRate;
+    const blockAlign = numCh * 2, dataLen = len * blockAlign;
+    const ab = new ArrayBuffer(44 + dataLen), view = new DataView(ab);
+    let p = 0;
+    const wstr = s => { for (let i = 0; i < s.length; i++) view.setUint8(p++, s.charCodeAt(i)); };
+    const u32 = v => { view.setUint32(p, v, true); p += 4; };
+    const u16 = v => { view.setUint16(p, v, true); p += 2; };
+    wstr('RIFF'); u32(36 + dataLen); wstr('WAVE');
+    wstr('fmt '); u32(16); u16(1); u16(numCh); u32(sr); u32(sr * blockAlign); u16(blockAlign); u16(16);
+    wstr('data'); u32(dataLen);
+    const chans = [];
+    for (let c = 0; c < numCh; c++) chans.push(buf.getChannelData(c));
+    for (let i = 0; i < len; i++) {
+      for (let c = 0; c < numCh; c++) {
+        let s = Math.max(-1, Math.min(1, chans[c][i]));
+        view.setInt16(p, s < 0 ? s * 0x8000 : s * 0x7FFF, true); p += 2;
+      }
+    }
+    return new Blob([ab], { type: 'audio/wav' });
+  }
+  function downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // --- persistence (localStorage) ---
+  const STORE_KEY = 'keys.session.v1';
+  let saveTimer = null;
+  function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveState, 400); }
+  function saveState() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        bpm: lp.bpm, bars: lp.bars, beatsPerBar: lp.beatsPerBar,
+        metro: lp.metro, quant: lp.quant, countIn: lp.countIn, countBars: lp.countBars,
+        tracks: lp.tracks.map(t => ({ notes: t.notes, tone: t.tone, muted: t.muted })),
+        mode, volume, tone, bindings
+      }));
+    } catch (e) {}
+  }
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY); if (!raw) return;
+      const d = JSON.parse(raw);
+      if (typeof d.bpm === 'number') lp.bpm = d.bpm;
+      if (typeof d.bars === 'number') lp.bars = d.bars;
+      if (typeof d.beatsPerBar === 'number') lp.beatsPerBar = d.beatsPerBar;
+      if (typeof d.metro === 'boolean') lp.metro = d.metro;
+      if (typeof d.quant === 'number') lp.quant = d.quant;
+      if (typeof d.countIn === 'boolean') lp.countIn = d.countIn;
+      if (typeof d.countBars === 'number') lp.countBars = d.countBars;
+      if (Array.isArray(d.tracks)) lp.tracks = d.tracks.map(t => ({
+        notes: Array.isArray(t.notes) ? t.notes : [], tone: t.tone || 'grand', muted: !!t.muted
+      }));
+      if (d.mode === 'basic' || d.mode === 'extended') mode = d.mode;
+      if (typeof d.volume === 'number') volume = d.volume;
+      if (d.tone && TONES[d.tone]) tone = d.tone;
+      // merge saved key bindings over defaults (keep all known actions present)
+      if (d.bindings) {
+        ['basic', 'extended'].forEach(mo => {
+          const src = d.bindings[mo]; if (!src) return;
+          for (const fn in DEFAULT_BINDINGS[mo]) {
+            if (Array.isArray(src[fn])) bindings[mo][fn] = src[fn].slice();
+          }
+        });
+      }
+    } catch (e) {}
+  }
+
+  function quantIndex() { return Math.max(0, QUANT_STEPS.findIndex(q => q.b === lp.quant)); }
+  function setQuant(idx) {
+    const i = (idx + QUANT_STEPS.length) % QUANT_STEPS.length;
+    lp.quant = QUANT_STEPS[i].b; updateLooperUI(); scheduleSave();
+  }
+
   // --- looper UI ---
   const recDotEl = document.getElementById('recDot');
   const beatDotsEl = document.getElementById('beatDots');
   const lpStatusEl = document.getElementById('lpStatus');
+  function dim(el, off) { el.style.opacity = off ? '0.4' : '1'; el.style.cursor = off ? 'default' : 'pointer'; el.disabled = !!off; }
   function updateLooperUI() {
     recDotEl.className = 'recdot' + (lp.state === 'recording' ? ' rec' : (lp.state === 'playing' ? ' play' : ''));
     document.getElementById('bpmVal').textContent = lp.bpm;
     document.getElementById('barsVal').textContent = lp.bars;
     document.getElementById('beatVal').textContent = lp.beatsPerBar + '/4';
+    document.getElementById('quantVal').textContent = QUANT_STEPS[quantIndex()].l;
     const recBtn = document.getElementById('recBtn');
     if (lp.state === 'stopped') {
       recBtn.textContent = '● REC (SPACE)';
-      lpStatusEl.textContent = '정지 · SPACE로 카운트인 후 녹음 (' + lp.notes.length + '음)';
+      lpStatusEl.textContent = '정지 · SPACE로 녹음 (' + lp.tracks.length + '레이어 ' + totalNotes() + '음)';
     } else if (lp.state === 'countin') recBtn.textContent = '● 카운트인…';
     else if (lp.state === 'recording') recBtn.textContent = '● 녹음 중 (SPACE=재생)';
     else if (lp.state === 'playing') recBtn.textContent = '▶ 재생 중 (SPACE=덧녹음)';
-    // PLAY only makes sense when stopped and something is recorded
-    const playBtn = document.getElementById('playBtn');
-    playBtn.disabled = !(lp.state === 'stopped' && lp.notes.length > 0);
-    playBtn.style.opacity = playBtn.disabled ? '0.4' : '1';
-    playBtn.style.cursor = playBtn.disabled ? 'default' : 'pointer';
-    // metronome toggle state
+    dim(document.getElementById('playBtn'),   !(lp.state === 'stopped' && hasNotes()));
+    dim(document.getElementById('undoBtn'),   !((lp.state === 'stopped' || lp.state === 'playing') && lp.tracks.length));
+    dim(document.getElementById('redoBtn'),   !lp.undone.length);
+    dim(document.getElementById('exportBtn'), !(hasNotes() && lp.state !== 'recording' && lp.state !== 'countin'));
     const metroBtn = document.getElementById('metroBtn');
     metroBtn.textContent = lp.metro ? '🔊 메트로놈' : '🔇 메트로놈';
     metroBtn.style.opacity = lp.metro ? '1' : '0.5';
   }
-  function setBpm(v) { lp.bpm = Math.max(40, Math.min(240, v)); updateLooperUI(); }
-  function setBars(v) {
-    if (lp.state !== 'stopped') return;
-    lp.bars = Math.max(1, Math.min(8, v)); updateLooperUI();
+  function setBpm(v) { lp.bpm = Math.max(40, Math.min(240, v)); updateLooperUI(); scheduleSave(); }
+  function setBars(v) { if (lp.state !== 'stopped') return; lp.bars = Math.max(1, Math.min(8, v)); updateLooperUI(); scheduleSave(); }
+  function setBeatsPerBar(v) { if (lp.state !== 'stopped') return; lp.beatsPerBar = Math.max(2, Math.min(8, v)); renderBeatDots(); updateLooperUI(); scheduleSave(); }
+  function setCountBars(v) { lp.countBars = Math.max(1, Math.min(4, v)); syncSettingsUI(); scheduleSave(); }
+  function setCountIn(on) { lp.countIn = on; syncSettingsUI(); scheduleSave(); }
+  // reflect settings-panel values
+  function syncSettingsUI() {
+    document.querySelectorAll('#modeToggle button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+    document.querySelectorAll('#countInToggle button').forEach(b => b.classList.toggle('on', (b.dataset.ci === 'on') === lp.countIn));
+    document.getElementById('countBarsVal').textContent = lp.countBars;
   }
-  function setBeatsPerBar(v) {
-    if (lp.state !== 'stopped') return;
-    lp.beatsPerBar = Math.max(2, Math.min(8, v)); renderBeatDots(); updateLooperUI();
-  }
+
   // blur the button after a click so a later SPACE can't re-trigger the focused one
   function wire(id, fn) {
     const el = document.getElementById(id);
@@ -1396,21 +1650,35 @@
   wire('recBtn',   () => looperToggle());
   wire('playBtn',  () => looperPlay());
   wire('stopBtn',  () => looperStop());
+  wire('undoBtn',  () => looperUndo());
+  wire('redoBtn',  () => looperRedo());
   wire('clearBtn', () => looperClear());
-  wire('metroBtn', () => { lp.metro = !lp.metro; updateLooperUI(); });
+  wire('exportBtn',() => exportWav());
+  wire('metroBtn', () => { lp.metro = !lp.metro; updateLooperUI(); scheduleSave(); });
   wire('bpmDown',  () => setBpm(lp.bpm - 4));
   wire('bpmUp',    () => setBpm(lp.bpm + 4));
   wire('barsDown', () => setBars(lp.bars - 1));
   wire('barsUp',   () => setBars(lp.bars + 1));
   wire('beatDown', () => setBeatsPerBar(lp.beatsPerBar - 1));
   wire('beatUp',   () => setBeatsPerBar(lp.beatsPerBar + 1));
-  renderBeatDots();
-  updateLooperUI();
+  wire('quantDown',() => setQuant(quantIndex() - 1));
+  wire('quantUp',  () => setQuant(quantIndex() + 1));
+  wire('countBarsDown', () => setCountBars(lp.countBars - 1));
+  wire('countBarsUp',   () => setCountBars(lp.countBars + 1));
+  document.getElementById('countInToggle').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    setCountIn(b.dataset.ci === 'on'); refocusIfEnabled();
+  });
 
   // ============ init ============
+  loadState();              // restore session (params, layout, shortcuts, loop)
   rebuildActionMap();
   buildMode();
   PLAY = playKeySet();
+  renderBeatDots();
+  renderTracks();
+  syncSettingsUI();
+  updateLooperUI();
 })();
 </script>
 </body>
