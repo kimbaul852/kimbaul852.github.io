@@ -131,6 +131,27 @@
   }
   .tpbtn:active { transform: scale(0.96); }
   .tpbtn.rec { background: rgba(255,93,143,0.16); border-color: rgba(255,93,143,0.5); color: var(--magenta); }
+
+  /* ---------- sheet music viewer ---------- */
+  .iconbtn.on { border-color: var(--amber); color: var(--amber); }
+  .sheet { width: min(1100px, 97vw); display: none; flex-direction: column; gap: 10px; }
+  body[data-view="sheet"] .sheet { display: flex; }
+  body[data-view="sheet"] .controls,
+  body[data-view="sheet"] .hint,
+  body[data-view="sheet"] .stage,
+  body[data-view="sheet"] .looper,
+  body[data-view="sheet"] .tracks { display: none !important; }
+  .sheettools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .sheetview {
+    width: 100%; max-height: calc(100vh - 230px); overflow: auto;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px; padding: 10px; text-align: center;
+  }
+  .sheetview img { width: 100%; height: auto; display: none; border-radius: 8px; }
+  .sheet .empty {
+    color: var(--dim); font-family: 'Space Mono', monospace; font-size: 12px;
+    line-height: 1.8; padding: 48px 16px;
+  }
   .ctl {
     background: var(--panel);
     border: 1px solid rgba(255,255,255,0.07);
@@ -452,6 +473,13 @@
   <div class="brand">KEYS</div>
   <div class="appbar-actions">
     <button class="armbtn" id="armBtn"><span class="dot"></span><span class="lbl"></span></button>
+    <button class="iconbtn" id="sheetBtn" aria-label="악보 보기 / Sheet view" title="악보 보기 / Sheet view">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <path d="M21 15l-5-5L5 21"/>
+      </svg>
+    </button>
     <button class="iconbtn" id="openSettings" aria-label="설정 / Settings" title="설정 / Settings">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/>
@@ -502,6 +530,22 @@
 
 <!-- track layers -->
 <div class="tracks" id="tracks"></div>
+
+<!-- sheet music viewer -->
+<input id="sheetFile" type="file" accept="image/*" hidden>
+<div class="sheet" id="sheet">
+  <div class="sheettools">
+    <button class="tbtn" id="sheetUpload">📁 이미지 올리기 / Upload</button>
+    <button class="tbtn" id="sheetZoomOut">➖</button>
+    <span class="lval cyan" id="sheetZoomVal">100%</span>
+    <button class="tbtn" id="sheetZoomIn">➕</button>
+    <button class="tbtn" id="sheetClear">✕ 제거</button>
+  </div>
+  <div class="sheetview" id="sheetView">
+    <div class="empty" id="sheetEmpty">악보 이미지를 올려주세요 · 키보드 단축키로 연주하세요<br>Upload a sheet image · play with keyboard shortcuts</div>
+    <img id="sheetImg" alt="sheet">
+  </div>
+</div>
 
 <!-- fixed bottom transport (thumb-friendly) -->
 <div class="transport" id="transport">
@@ -1711,8 +1755,83 @@
     setCountIn(b.dataset.ci === 'on'); refocusIfEnabled();
   });
 
+  // ============ sheet music viewer ============
+  // Upload a sheet image and read it full-screen while you play with keyboard
+  // shortcuts. In sheet view the on-screen piano and extra controls are hidden.
+  // The image is downscaled and stored under its own localStorage key so it
+  // never bloats (or breaks) the session save.
+  const SHEET_KEY = 'keys.sheet.v1';
+  const sheet = { on: false, src: null, zoom: 1 };
+  const sheetImg = document.getElementById('sheetImg');
+  const sheetEmpty = document.getElementById('sheetEmpty');
+  const sheetFileEl = document.getElementById('sheetFile');
+  function saveSheet() { try { localStorage.setItem(SHEET_KEY, JSON.stringify(sheet)); } catch (e) {} }
+  function loadSheet() {
+    try {
+      const r = localStorage.getItem(SHEET_KEY); if (!r) return;
+      const d = JSON.parse(r);
+      sheet.on = !!d.on; sheet.src = d.src || null; sheet.zoom = d.zoom || 1;
+    } catch (e) {}
+  }
+  function updateSheetBtn() {
+    const b = document.getElementById('sheetBtn'); if (b) b.classList.toggle('on', sheet.on);
+  }
+  function applySheetView() {
+    if (sheet.on) document.body.setAttribute('data-view', 'sheet');
+    else document.body.removeAttribute('data-view');
+    updateSheetBtn();
+  }
+  function toggleSheet() { sheet.on = !sheet.on; applySheetView(); saveSheet(); refocusIfEnabled(); }
+  function renderSheet() {
+    if (sheet.src) {
+      sheetImg.src = sheet.src; sheetImg.style.display = 'block';
+      sheetImg.style.width = (sheet.zoom * 100) + '%';
+      sheetEmpty.style.display = 'none';
+    } else {
+      sheetImg.removeAttribute('src'); sheetImg.style.display = 'none';
+      sheetEmpty.style.display = 'block';
+    }
+    const zv = document.getElementById('sheetZoomVal');
+    if (zv) zv.textContent = Math.round(sheet.zoom * 100) + '%';
+  }
+  function setSheetZoom(z) { sheet.zoom = Math.max(0.5, Math.min(3, Math.round(z * 10) / 10)); renderSheet(); saveSheet(); }
+  function loadSheetFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1600;
+        let w = img.naturalWidth, h = img.naturalHeight;
+        const sc = Math.min(1, max / Math.max(w, h));
+        w = Math.round(w * sc); h = Math.round(h * sc);
+        try {
+          const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          sheet.src = cv.toDataURL('image/jpeg', 0.85);
+        } catch (e) { sheet.src = reader.result; }
+        sheet.zoom = 1; if (!sheet.on) { sheet.on = true; applySheetView(); }
+        renderSheet(); saveSheet();
+      };
+      img.onerror = () => { sheet.src = reader.result; renderSheet(); saveSheet(); };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  document.getElementById('sheetBtn').onclick = () => toggleSheet();
+  wire('sheetUpload',  () => sheetFileEl.click());
+  wire('sheetZoomOut', () => setSheetZoom(sheet.zoom - 0.1));
+  wire('sheetZoomIn',  () => setSheetZoom(sheet.zoom + 0.1));
+  wire('sheetClear',   () => { sheet.src = null; sheet.zoom = 1; renderSheet(); saveSheet(); });
+  sheetFileEl.addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0];
+    if (f) loadSheetFile(f);
+    e.target.value = '';
+  });
+
   // ============ init ============
   loadState();              // restore session (params, layout, shortcuts, loop)
+  loadSheet();
   rebuildActionMap();
   buildMode();
   PLAY = playKeySet();
@@ -1720,6 +1839,8 @@
   renderTracks();
   syncSettingsUI();
   updateLooperUI();
+  renderSheet();
+  applySheetView();
 })();
 </script>
 </body>
