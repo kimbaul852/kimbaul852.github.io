@@ -525,7 +525,7 @@
   <div class="lcol"><label>퀀타이즈 QUANT</label><div class="stepper">
     <button id="quantDown">−</button><span class="lval cyan" id="quantVal">OFF</span><button id="quantUp">+</button></div></div>
   <div class="beatdots" id="beatDots"></div>
-  <div class="status" id="lpStatus">정지 · SPACE로 카운트인 후 녹음</div>
+  <div class="status" id="lpStatus">정지 · Ctrl/⌘+Enter 또는 REC로 녹음</div>
 </div>
 
 <!-- track layers -->
@@ -1123,9 +1123,15 @@
       e.preventDefault();
       return;
     }
-    // looper transport: SPACE works even when keyboard play is off
-    if ((k === ' ' || e.code === 'Space') && !overlay.classList.contains('show')) {
+    // looper record toggle: Ctrl/⌘ + Enter (two-key combo so it can't fire by
+    // accident). Works even when keyboard play is off.
+    if ((e.key === 'Enter' || e.code === 'Enter') && (e.ctrlKey || e.metaKey) && !overlay.classList.contains('show')) {
       if (!e.repeat) looperToggle();
+      e.preventDefault();
+      return;
+    }
+    // swallow a lone Space so it can't scroll the page or trigger anything
+    if ((k === ' ' || e.code === 'Space') && !overlay.classList.contains('show')) {
       e.preventDefault();
       return;
     }
@@ -1703,7 +1709,7 @@
     const recBtn = document.getElementById('recBtn');
     if (lp.state === 'stopped') {
       recBtn.textContent = '● REC';
-      lpStatusEl.textContent = '정지 · SPACE로 녹음 (' + lp.tracks.length + '레이어 ' + totalNotes() + '음)';
+      lpStatusEl.textContent = '정지 · Ctrl/⌘+Enter 또는 REC로 녹음 (' + lp.tracks.length + '레이어 ' + totalNotes() + '음)';
     } else if (lp.state === 'countin') recBtn.textContent = '● …';
     else if (lp.state === 'recording') recBtn.textContent = '● 녹음중';
     else if (lp.state === 'playing') recBtn.textContent = '▶ 덧녹음';
