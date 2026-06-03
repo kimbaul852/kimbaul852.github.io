@@ -3,6 +3,11 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [14] - 2026-06-02
+### 수정 / Fixed
+- 📵 iOS 더블탭 확대 보강 — `touch-action`만으론 남던 확대를, **같은 위치 빠른 두 번째 탭만** JS로 취소(연주·단일 탭은 영향 없음)
+  Hardened iOS double-tap zoom blocking — cancels only a quick **second tap at the same spot** in JS (fast playing / single taps unaffected)
+
 ## [13] - 2026-06-02
 ### 변경 / Changed
 - ⌨️ 키보드 입력 ON 상태가 **다른 버튼을 눌러도 유지**되도록 — 포커스가 아니라 arm 버튼(또는 토글 키)으로만 꺼짐

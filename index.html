@@ -1201,6 +1201,20 @@
   window.addEventListener('focus', resumeAudio);
   window.addEventListener('pointerdown', resumeAudio, true);
 
+  // Block iOS double-tap-to-zoom (touch-action alone isn't always enough).
+  // Only cancels a quick SECOND tap at nearly the same spot, so playing fast
+  // (taps land in different places) and single taps are unaffected.
+  let lastTapEnd = 0, lastTapX = 0, lastTapY = 0;
+  document.addEventListener('touchend', e => {
+    const t = e.changedTouches[0]; if (!t) return;
+    const now = Date.now();
+    if (now - lastTapEnd <= 320 &&
+        Math.abs(t.clientX - lastTapX) < 40 && Math.abs(t.clientY - lastTapY) < 40) {
+      e.preventDefault();
+    }
+    lastTapEnd = now; lastTapX = t.clientX; lastTapY = t.clientY;
+  }, { passive: false });
+
   // ============ mode toggle ============
   const modeToggle = document.getElementById('modeToggle');
   modeToggle.addEventListener('click', e => {
