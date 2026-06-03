@@ -1110,8 +1110,11 @@
   }
   capture.addEventListener('focus', () => { if (kbEnabled) armBtn.classList.add('armed'); });
   capture.addEventListener('blur', () => {
-    if (overlay.classList.contains('show')) return;
-    armBtn.classList.remove('armed'); kbEnabled = false;
+    // Keep keyboard input ON when focus moves to a button/control — only the
+    // arm button (or the toggle key) turns it off. Just re-grab focus so the
+    // hidden capture keeps receiving keystrokes.
+    if (overlay.classList.contains('show') || !kbEnabled) return;
+    setTimeout(() => { if (kbEnabled && !overlay.classList.contains('show')) focusCapture(); }, 0);
   });
   capture.addEventListener('input', () => { capture.value = ''; });
   armBtn.addEventListener('click', toggleKeyboard);

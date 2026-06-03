@@ -3,6 +3,11 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [13] - 2026-06-02
+### 변경 / Changed
+- ⌨️ 키보드 입력 ON 상태가 **다른 버튼을 눌러도 유지**되도록 — 포커스가 아니라 arm 버튼(또는 토글 키)으로만 꺼짐
+  Keyboard-input ON now **stays on when you tap other buttons** — it turns off only via the arm button (or toggle key), not on focus loss
+
 ## [12] - 2026-06-02
 ### 변경 / Changed
 - 🧹 메인 화면의 긴 단축키 안내 줄을 제거하고 **"단축키 보기" 버튼 하나**로 정리 (건반 라벨로 충분)
