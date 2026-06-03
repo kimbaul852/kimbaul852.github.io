@@ -3,6 +3,16 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [12] - 2026-06-02
+### 변경 / Changed
+- 🧹 메인 화면의 긴 단축키 안내 줄을 제거하고 **"단축키 보기" 버튼 하나**로 정리 (건반 라벨로 충분)
+  Removed the long shortcut hint line from the main screen in favor of a single **"Shortcuts" button** (key labels already shown on the keys)
+### 수정 / Fixed
+- 🔊 다른 앱/탭에 갔다 돌아오면 소리가 안 나던 문제 — 복귀(visibility/focus)·터치 시 **AudioContext 자동 재개**(iOS suspended/interrupted 대응)
+  No sound after returning from another app/tab — **AudioContext now auto-resumes** on visibility/focus/touch (handles iOS suspended/interrupted)
+- 📵 화면 **더블탭 확대 방지** (`touch-action: manipulation`)
+  Prevented **double-tap zoom** on the screen (`touch-action: manipulation`)
+
 ## [11] - 2026-06-02
 ### 변경 / Changed
 - ⌨️ 녹음 토글 단축키를 **단독 스페이스 → Ctrl/⌘ + Enter** 두 키 조합으로 변경 (실수 입력 방지, iOS 시스템 단축키와 충돌 없음). 단독 스페이스는 더 이상 녹음을 토글하지 않음. 터치는 하단 REC 버튼 그대로
