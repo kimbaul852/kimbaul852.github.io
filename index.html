@@ -285,7 +285,8 @@
     touch-action: none;
   }
   /* single mode: tall. extended mode: each row shorter */
-  body[data-mode="basic"] .piano { height: clamp(150px, 26vw, 230px); }
+  body[data-mode="basic"] .piano,
+  body[data-mode="thumb"] .piano { height: clamp(150px, 26vw, 230px); }
   body[data-mode="extended"] .piano { height: clamp(96px, 16vw, 150px); }
 
   .key { position: relative; cursor: pointer; transition: transform 0.04s ease; }
@@ -325,6 +326,8 @@
   .klabel { font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700; }
   .white .klabel { color: #8c86a0; }
   .white.down .klabel { color: #7a4e00; }
+  .white .altlabel { font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; color: var(--magenta); margin-top: 2px; }
+  .white.down .altlabel { color: #7a4e00; }
   .black .klabel { color: #c9c3da; font-size: 8px; }
   .black.down .klabel { color: #1a1208; }
   .nlabel { font-family: 'Space Mono', monospace; font-size: 7px; margin-top: 2px; }
@@ -332,8 +335,10 @@
   .black .nlabel { display: block; color: #8e88a4; font-size: 6px; }
 
   /* hide the lower-row tag/labels cleanly in basic mode */
-  body[data-mode="basic"] #rowUpperWrap { display: none; }
-  body[data-mode="basic"] .rowtag { display: none; }
+  body[data-mode="basic"] #rowUpperWrap,
+  body[data-mode="thumb"] #rowUpperWrap { display: none; }
+  body[data-mode="basic"] .rowtag,
+  body[data-mode="thumb"] .rowtag { display: none; }
 
   /* ---------- modal (shortcuts) ---------- */
   .overlay {
@@ -577,6 +582,7 @@
       <div class="modetoggle" id="modeToggle">
         <button data-mode="basic" class="on">기본</button>
         <button data-mode="extended">확장 2줄</button>
+        <button data-mode="thumb">엄지추가</button>
       </div>
     </div>
 
@@ -714,6 +720,7 @@
       el: opts.el,
       whiteKeys: opts.whiteKeys,   // 10 chars
       gapKeys: opts.gapKeys,       // 9 chars (between white i and i+1)
+      whiteAlt: opts.whiteAlt || null,  // optional duplicate chars for white keys
       color: opts.color,           // 'lower' | 'upper'
       infoEl: opts.infoEl,
       windowStart: allWhite.indexOf(opts.startMidi),
@@ -723,6 +730,7 @@
       held: new Set()
     };
     if (P.windowStart < 0) P.windowStart = allWhite.indexOf(60);
+    P.homeStart = P.windowStart;   // remember default for the octave readout
     const WC = P.whiteKeys.length;
 
     P.soundMidi = keyMidi => keyMidi + P.transpose;
@@ -741,7 +749,12 @@
         el.className = 'key white';
         const ch = P.whiteKeys[i];
         P.keyByChar[ch] = midi;
-        el.innerHTML = `<span class="klabel">${capLabel(ch)}</span>
+        let altHtml = '';
+        if (P.whiteAlt && P.whiteAlt[i]) {
+          P.keyByChar[P.whiteAlt[i]] = midi;   // duplicate trigger, same note
+          altHtml = `<span class="altlabel">${capLabel(P.whiteAlt[i])}</span>`;
+        }
+        el.innerHTML = `<span class="klabel">${capLabel(ch)}</span>${altHtml}
                         <span class="nlabel">${nameOf(midi + P.transpose)}</span>`;
         bindPointer(P, el, midi);
         P.el.appendChild(el);
@@ -850,6 +863,10 @@
   // likewise: 1 sits left of Q; the key above the Q–W gap is 2, not 1.
   const UPPER_GAP   = ['2','3','4','5','6','7','8','9','0'];        // 9 gaps
 
+  // THUMB-ADD mode ("엄지추가"): only the upper piano, with the home row added
+  // as duplicate triggers for the same white notes (A=Q, S=W, … ;=P).
+  const HOME_ROW    = ['a','s','d','f','g','h','j','k','l',';'];   // 10, one per white
+
   let mode = 'basic';
   let pianos = [];        // active pianos
   let lowerP = null, upperP = null;
@@ -868,6 +885,15 @@
         el: elLower, infoEl: lowerInfo,
         whiteKeys: BASIC_WHITE, gapKeys: BASIC_GAP,
         startMidi: 60, color: 'lower'   // C4
+      });
+      upperP = null;
+      pianos = [lowerP];
+    } else if (mode === 'thumb') {
+      // upper piano only + home-row duplicate keys
+      lowerP = makePiano({
+        el: elLower, infoEl: lowerInfo,
+        whiteKeys: UPPER_WHITE, gapKeys: UPPER_GAP, whiteAlt: HOME_ROW,
+        startMidi: 77, color: 'lower'   // F5
       });
       upperP = null;
       pianos = [lowerP];
@@ -915,6 +941,12 @@
       // pitch bend (hold)
       bendDown:['['], bendUp:[']'],
       sustain:['shift'], toggleKb:['`']
+    },
+    thumb: {
+      octDown:['z'], octUp:['x'], winDown:[','], winUp:['.'],
+      bendDown:['['], bendUp:[']'], volDown:['-'], volUp:['='],
+      toneGrand:['c'], toneElec:['v'], toneSynth:['b'],
+      sustain:['shift'], toggleKb:['`']
     }
   };
   const BIND_META = {
@@ -936,6 +968,15 @@
       trUp:{name:'트랜스포즈 +',desc:'두 건반 함께 반음 올림'},
       bendDown:{name:'벤드 ↓',desc:'누르는 동안 반음 내려 휘어짐'}, bendUp:{name:'벤드 ↑',desc:'누르는 동안 반음 올려 휘어짐'},
       sustain:{name:'서스테인',desc:'누르는 동안 지속'},
+      toggleKb:{name:'키보드 입력 ON/OFF',desc:'키보드 연주 켜기·끄기 토글'}
+    },
+    thumb: {
+      octDown:{name:'옥타브 −',desc:'한 옥타브 아래'}, octUp:{name:'옥타브 +',desc:'한 옥타브 위'},
+      winDown:{name:'창 ←',desc:'흰건반 한 칸 왼쪽'}, winUp:{name:'창 →',desc:'흰건반 한 칸 오른쪽'},
+      bendDown:{name:'벤드 ↓',desc:'누르는 동안 반음 내려 휘어짐'}, bendUp:{name:'벤드 ↑',desc:'누르는 동안 반음 올려 휘어짐'},
+      volDown:{name:'볼륨 −',desc:'작게'}, volUp:{name:'볼륨 +',desc:'크게'},
+      toneGrand:{name:'음색 GRAND',desc:'어쿠스틱'}, toneElec:{name:'음색 ELEC',desc:'일렉트릭'},
+      toneSynth:{name:'음색 SYNTH',desc:'신스'}, sustain:{name:'서스테인',desc:'누르는 동안 지속'},
       toggleKb:{name:'키보드 입력 ON/OFF',desc:'키보드 연주 켜기·끄기 토글'}
     }
   };
@@ -981,6 +1022,7 @@
     pianos.forEach(p => {
       p.whiteKeys.forEach(k => s.add(k));
       p.gapKeys.forEach(k => { if (k) s.add(k); });
+      if (p.whiteAlt) p.whiteAlt.forEach(k => { if (k) s.add(k); });
     });
     return s;
   }
@@ -991,7 +1033,7 @@
   let advOpen = false;   // collapsible advanced controls (Octave/Shift/Transpose)
   function buildControls() {
     // advanced (less-used) performance controls — collapsible
-    const adv = mode === 'basic'
+    const adv = mode !== 'extended'
       ? `<div class="ctl"><label>Octave</label><div class="row">
            <button data-act="octDown">−</button><span class="val" id="octVal">±0</span><button data-act="octUp">+</button></div></div>
          <div class="ctl"><label>Shift Window</label><div class="row">
@@ -1014,7 +1056,7 @@
         <button class="advtoggle" id="advToggle">${advOpen ? '고급 ▴' : '고급 ▾'}</button>
       </div>
       <div class="ctladv${advOpen ? '' : ' collapsed'}" id="ctladv">${adv}</div>`;
-    if (mode === 'basic') syncBasicReadouts();
+    if (mode !== 'extended') syncBasicReadouts();
     // wire control buttons
     controls.querySelectorAll('button[data-act]').forEach(btn => {
       btn.onclick = () => { runAction(btn.dataset.act); refocusIfEnabled(); };
@@ -1053,22 +1095,19 @@
   }
 
   function syncBasicReadouts() {
-    if (mode !== 'basic') return;
-    const homeIdx = allWhite.indexOf(60);
-    const octShift = Math.round((lowerP.windowStart - homeIdx) / 7);
+    if (mode === 'extended') return;
+    const octShift = Math.round((lowerP.windowStart - lowerP.homeStart) / 7);
     const oc = document.getElementById('octVal');
     if (oc) oc.textContent = octShift > 0 ? '+' + octShift : (octShift < 0 ? '' + octShift : '±0');
     const wv = document.getElementById('winVal');
-    if (wv) wv.textContent = lowerP.infoEl ? lowerP.infoEl.textContent.split(' ')[0] === 'A'
-              ? lowerP.infoEl.textContent : 'A = ' + nameOf(allWhite[lowerP.windowStart] + lowerP.transpose)
-              : '';
-    if (wv) wv.textContent = 'A = ' + nameOf(allWhite[lowerP.windowStart] + lowerP.transpose);
+    const lbl = lowerP.whiteKeys[0].toUpperCase();
+    if (wv) wv.textContent = lbl + ' = ' + nameOf(allWhite[lowerP.windowStart] + lowerP.transpose);
     const tv = document.getElementById('trVal');
     if (tv) tv.textContent = lowerP.transpose > 0 ? '+' + lowerP.transpose : '' + lowerP.transpose;
   }
 
   function refreshControlReadouts() {
-    if (mode === 'basic') { syncBasicReadouts(); return; }
+    if (mode !== 'extended') { syncBasicReadouts(); return; }
     const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
     set('loWinVal', 'Z=' + nameOf(allWhite[lowerP.windowStart] + lowerP.transpose));
     if (upperP) set('upWinVal', 'Q=' + nameOf(allWhite[upperP.windowStart] + upperP.transpose));
@@ -1267,7 +1306,9 @@
     document.getElementById('bindNote').innerHTML =
       (mode === 'basic'
         ? '연주 건반: 흰 A S D F G H J K L ;  ·  검은 W E R T Y U I O P'
-        : '연주 건반(아래 Z X C V B N M , . / + S~; / 위 Q~P + 2~0)은 고정입니다.') +
+        : mode === 'thumb'
+          ? '연주 건반: 흰 Q W E R T Y U I O P (+ 같은 음 A S D F G H J K L ;) · 검은 2~0'
+          : '연주 건반(아래 Z X C V B N M , . / + S~; / 위 Q~P + 2~0)은 고정입니다.') +
       '<br>설정은 이 세션에만 적용됩니다.';
   }
   function startListen(fn, idx, cap) {
@@ -1323,7 +1364,7 @@
         ' · 벤드 <b>' + shortKey(b.bendDown[0]) + '</b>/<b>' + shortKey(b.bendUp[0]) + '</b>' +
         ' · 서스테인 <b>' + shortKey(b.sustain[0]) + '</b>' +
         ' · 키보드 <b>' + shortKey(b.toggleKb[0]) + '</b>';
-    } else {
+    } else if (mode === 'extended') {
       h.innerHTML =
         '<span class="mag">위</span> 흰 <b>Q W E R T Y U I O P</b> 검은 <b>2~0</b>' +
         ' · 자리 <span class="mag">' + shortKey(b.upWinDown[0]) + '/' + shortKey(b.upWinUp[0]) + '</span><br>' +
@@ -1715,12 +1756,12 @@
       if (Array.isArray(d.tracks)) lp.tracks = d.tracks.map(t => ({
         notes: Array.isArray(t.notes) ? t.notes : [], tone: t.tone || 'grand', muted: !!t.muted
       }));
-      if (d.mode === 'basic' || d.mode === 'extended') mode = d.mode;
+      if (d.mode === 'basic' || d.mode === 'extended' || d.mode === 'thumb') mode = d.mode;
       if (typeof d.volume === 'number') volume = d.volume;
       if (d.tone && TONES[d.tone]) tone = d.tone;
       // merge saved key bindings over defaults (keep all known actions present)
       if (d.bindings) {
-        ['basic', 'extended'].forEach(mo => {
+        ['basic', 'extended', 'thumb'].forEach(mo => {
           const src = d.bindings[mo]; if (!src) return;
           for (const fn in DEFAULT_BINDINGS[mo]) {
             if (Array.isArray(src[fn])) bindings[mo][fn] = src[fn].slice();

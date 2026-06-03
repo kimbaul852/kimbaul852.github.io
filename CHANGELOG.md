@@ -3,6 +3,11 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [15] - 2026-06-02
+### 추가 / Added
+- 🎹 **엄지추가 모드** — 확장 모드의 위 피아노(흰 `Q~P` / 검은 `2~0`)만 사용하고, 홈row `A S D F G H J K L ;` 를 **같은 음의 복제 키**로 추가(A=Q, S=W … ;=P). 흰건반에 보조 라벨 표시. 설정의 레이아웃에서 선택
+  **Thumb-add mode** — uses only the upper piano (white `Q~P` / black `2~0`) and adds the home row `A S D F G H J K L ;` as **duplicate keys for the same notes** (A=Q, S=W … ;=P), shown as a secondary label on each white key. Selectable in Settings → layout
+
 ## [14] - 2026-06-02
 ### 수정 / Fixed
 - 📵 iOS 더블탭 확대 보강 — `touch-action`만으론 남던 확대를, **같은 위치 빠른 두 번째 탭만** JS로 취소(연주·단일 탭은 영향 없음)
