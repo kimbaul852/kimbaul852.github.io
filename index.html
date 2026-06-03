@@ -39,6 +39,7 @@
     overflow: hidden;
     -webkit-user-select: none; user-select: none;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;   /* disable double-tap-to-zoom */
   }
   body {
     background:
@@ -241,6 +242,14 @@
   .hint b { color: var(--cyan); }
   .hint .mag { color: var(--magenta); }
   .hint .amb { color: var(--amber); }
+
+  .hintbar { width: min(1100px, 97vw); display: flex; justify-content: center; }
+  .hintbtn {
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px; padding: 7px 16px; color: var(--dim); cursor: pointer;
+    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+  }
+  .hintbtn:hover { border-color: rgba(255,174,59,0.5); color: var(--ink); }
 
   .stage {
     width: min(1100px, 97vw);
@@ -491,7 +500,9 @@
 
 <div class="controls" id="controls"><!-- mode-specific controls injected here --></div>
 
-<div class="hint" id="hintText"></div>
+<div class="hintbar">
+  <button class="hintbtn" id="openShortcuts">⌨ 단축키 보기 / Shortcuts</button>
+</div>
 
 <div class="stage">
   <div class="feltbar"></div>
@@ -651,6 +662,12 @@
     const comp = actx.createDynamicsCompressor();
     masterGain.connect(comp); comp.connect(actx.destination);
   }
+  // iOS/Safari suspends (or "interrupts") the AudioContext when the tab is
+  // backgrounded; it must be resumed — ideally inside a user gesture — or no
+  // sound comes out after returning. Resume on visibility/focus and on touch.
+  function resumeAudio() {
+    if (actx && actx.state !== 'running') { try { actx.resume(); } catch (e) {} }
+  }
   const TONES = {
     grand:    {types:['triangle','sine'],   mix:[0.7,0.3], decay:1.8, attack:0.006},
     electric: {types:['sine','sine'],       mix:[0.8,0.4], decay:2.6, attack:0.004, detune:6},
@@ -660,7 +677,7 @@
   function audioOn(soundMidi) {
     if (active.has(soundMidi)) return;
     ensureAudio();
-    if (actx.state === 'suspended') actx.resume();
+    if (actx.state !== 'running') actx.resume();
     const cfg = TONES[tone], now = actx.currentTime;
     const g = actx.createGain(); g.connect(masterGain);
     g.gain.setValueAtTime(0.0001, now);
@@ -1176,6 +1193,10 @@
     pianos.forEach(p => p.releaseHeld());
     if (bendDir !== 0) { bendDir = 0; applyBend(0, 0.05); }
   });
+  // resume audio after returning from another app / tab (iOS suspends it)
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeAudio(); });
+  window.addEventListener('focus', resumeAudio);
+  window.addEventListener('pointerdown', resumeAudio, true);
 
   // ============ mode toggle ============
   const modeToggle = document.getElementById('modeToggle');
@@ -1254,7 +1275,9 @@
     listening = null; bindWarn.textContent = '';
     renderBindings(); updateHint(); scheduleSave();
   }, true);
-  document.getElementById('openSettings').onclick = () => { renderBindings(); syncSettingsUI(); overlay.classList.add('show'); focusCapture(); };
+  function openSettingsModal() { renderBindings(); syncSettingsUI(); overlay.classList.add('show'); focusCapture(); }
+  document.getElementById('openSettings').onclick = openSettingsModal;
+  document.getElementById('openShortcuts').onclick = openSettingsModal;
   document.getElementById('closeKeys').onclick = () => { overlay.classList.remove('show'); listening = null; refocusIfEnabled(); };
   document.getElementById('resetKeys').onclick = () => {
     bindings[mode] = JSON.parse(JSON.stringify(DEFAULT_BINDINGS[mode]));
@@ -1272,8 +1295,9 @@
     return keyLabel(k);
   }
   function updateHint() {
-    const b = bindings[mode];
     const h = document.getElementById('hintText');
+    if (!h) return;   // hint line removed from the main screen (see settings instead)
+    const b = bindings[mode];
     if (mode === 'basic') {
       h.innerHTML =
         '흰건반 <b>A S D F G H J K L ;</b> · 검은건반 <b>W E R T Y U I O P</b><br>' +
@@ -1446,7 +1470,7 @@
   }
   function looperStart() {
     ensureAudio();
-    if (actx.state === 'suspended') actx.resume();
+    if (actx.state !== 'running') actx.resume();
     const bd = beatDurNow(), start = actx.currentTime + 0.15;
     if (lp.countIn) {
       const clicks = lp.countBars * lp.beatsPerBar;
@@ -1486,7 +1510,7 @@
   function looperPlay() {
     if (lp.state !== 'stopped' || !hasNotes()) return;
     ensureAudio();
-    if (actx.state === 'suspended') actx.resume();
+    if (actx.state !== 'running') actx.resume();
     lp.cycleStart = actx.currentTime + 0.12;
     lp.cycleScheduled = false;
     lp.state = 'playing';
