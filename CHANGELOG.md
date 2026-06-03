@@ -3,6 +3,11 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [11] - 2026-06-02
+### 변경 / Changed
+- ⌨️ 녹음 토글 단축키를 **단독 스페이스 → Ctrl/⌘ + Enter** 두 키 조합으로 변경 (실수 입력 방지, iOS 시스템 단축키와 충돌 없음). 단독 스페이스는 더 이상 녹음을 토글하지 않음. 터치는 하단 REC 버튼 그대로
+  Record toggle changed from **lone Space → Ctrl/⌘ + Enter** (prevents accidental triggers, avoids iOS system shortcuts). A lone Space no longer toggles recording; touch still uses the bottom REC button
+
 ## [10] - 2026-06-02
 ### 추가 / Added
 - 🎼 **악보 보기 모드** — 악보 이미지를 업로드해 크게 보며 키보드 단축키로 연주 (앱바 악보 아이콘으로 토글)
