@@ -1804,7 +1804,7 @@
     metroBtn.style.opacity = lp.metro ? '1' : '0.5';
   }
   function setBpm(v) { lp.bpm = Math.max(40, Math.min(240, v)); updateLooperUI(); scheduleSave(); }
-  function setBars(v) { if (lp.state !== 'stopped') return; lp.bars = Math.max(1, Math.min(8, v)); updateLooperUI(); scheduleSave(); }
+  function setBars(v) { if (lp.state !== 'stopped') return; lp.bars = Math.max(1, Math.min(16, v)); updateLooperUI(); scheduleSave(); }
   function setBeatsPerBar(v) { if (lp.state !== 'stopped') return; lp.beatsPerBar = Math.max(2, Math.min(8, v)); renderBeatDots(); updateLooperUI(); scheduleSave(); }
   function setCountBars(v) { lp.countBars = Math.max(1, Math.min(4, v)); syncSettingsUI(); scheduleSave(); }
   function setCountIn(on) { lp.countIn = on; syncSettingsUI(); scheduleSave(); }
