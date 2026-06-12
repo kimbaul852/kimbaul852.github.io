@@ -3,6 +3,11 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [16] - 2026-06-02
+### 변경 / Changed
+- 🔁 루프 마디 수 상한을 **8 → 16마디**로 확대
+  Raised the loop length limit from **8 → 16 bars**
+
 ## [15] - 2026-06-02
 ### 추가 / Added
 - 🎹 **엄지추가 모드** — 확장 모드의 위 피아노(흰 `Q~P` / 검은 `2~0`)만 사용하고, 홈row `A S D F G H J K L ;` 를 **같은 음의 복제 키**로 추가(A=Q, S=W … ;=P). 흰건반에 보조 라벨 표시. 설정의 레이아웃에서 선택
