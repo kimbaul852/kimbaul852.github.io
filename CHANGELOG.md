@@ -3,6 +3,11 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [17] - 2026-06-02
+### 추가 / Added
+- 🎚️ 피아노 상단 바에 **옥타브 −/+ 버튼**과 현재 옥타브 표시 추가 — 모든 모드에서 모든 건반을 한 옥타브씩 이동
+  Added **octave −/+ buttons** (with current-octave readout) to the piano top bar — shifts all keys by an octave in every mode
+
 ## [16] - 2026-06-02
 ### 변경 / Changed
 - 🔁 루프 마디 수 상한을 **8 → 16마디**로 확대
