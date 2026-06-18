@@ -260,10 +260,29 @@
     box-shadow: 0 30px 70px -30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05);
     display: flex; flex-direction: column; gap: 14px;
   }
+  .pianobar { display: flex; align-items: center; gap: 12px; }
   .feltbar {
+    flex: 1;
     height: 7px; border-radius: 4px;
     background: linear-gradient(90deg, var(--amber), var(--magenta), var(--cyan));
     opacity: 0.85;
+  }
+  .octctl { display: flex; align-items: center; gap: 6px; flex: none; }
+  .octctl .octlabel {
+    font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.12em;
+    color: var(--dim); text-transform: uppercase;
+  }
+  .octbtn {
+    width: 30px; height: 26px; border-radius: 7px; cursor: pointer; flex: none;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+    color: var(--ink); font-size: 15px; line-height: 1;
+    transition: background 0.12s, transform 0.06s, border-color 0.12s;
+  }
+  .octbtn:hover { border-color: rgba(255,174,59,0.5); }
+  .octbtn:active { transform: scale(0.9); }
+  .octval {
+    min-width: 42px; text-align: center;
+    font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; color: var(--amber);
   }
 
   .rowwrap { display: flex; flex-direction: column; gap: 6px; }
@@ -510,7 +529,15 @@
 </div>
 
 <div class="stage">
-  <div class="feltbar"></div>
+  <div class="pianobar">
+    <div class="octctl">
+      <span class="octlabel">Octave</span>
+      <button class="octbtn" id="octDownBtn" aria-label="옥타브 내림">−</button>
+      <span class="octval" id="octBarVal">±0</span>
+      <button class="octbtn" id="octUpBtn" aria-label="옥타브 올림">+</button>
+    </div>
+    <div class="feltbar"></div>
+  </div>
   <!-- upper row (extended only) -->
   <div class="rowwrap" id="rowUpperWrap">
     <div class="rowtag"><span class="badge upper">위 / UPPER</span><span id="upperInfo"></span></div>
@@ -1106,7 +1133,23 @@
     if (tv) tv.textContent = lowerP.transpose > 0 ? '+' + lowerP.transpose : '' + lowerP.transpose;
   }
 
+  // octave readout in the piano top bar (relative to the mode's default)
+  function updateOctBar() {
+    const ob = document.getElementById('octBarVal');
+    if (ob && lowerP) {
+      const o = Math.round((lowerP.windowStart - lowerP.homeStart) / 7);
+      ob.textContent = o > 0 ? '+' + o : (o < 0 ? '' + o : '±0');
+    }
+  }
+  // shift every active piano by one octave (works in all modes)
+  function octaveAll(dir) {
+    pianos.forEach(p => p.shift(dir * 7));
+    refreshControlReadouts();
+    flashHit();
+  }
+
   function refreshControlReadouts() {
+    updateOctBar();
     if (mode !== 'extended') { syncBasicReadouts(); return; }
     const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
     set('loWinVal', 'Z=' + nameOf(allWhite[lowerP.windowStart] + lowerP.transpose));
@@ -1828,6 +1871,8 @@
   wire('clearBtn', () => looperClear());
   wire('exportBtn',() => exportWav());
   wire('metroBtn', () => { lp.metro = !lp.metro; updateLooperUI(); scheduleSave(); });
+  wire('octDownBtn', () => octaveAll(-1));
+  wire('octUpBtn',   () => octaveAll(1));
   wire('bpmDown',  () => setBpm(lp.bpm - 4));
   wire('bpmUp',    () => setBpm(lp.bpm + 4));
   wire('barsDown', () => setBars(lp.bars - 1));
