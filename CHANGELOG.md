@@ -3,6 +3,11 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [18] - 2026-06-02
+### 변경 / Changed
+- 🎚️ 피아노 상단 바를 값/라벨 없는 **버튼 묶음**으로 정리: `« ‹ › »` (옥타브/창 이동) + `▲ ▼` (반음 벤딩, 누르는 동안). 모든 모드의 모든 건반에 적용
+  Top bar is now a compact **button cluster** (no values/labels): `« ‹ › »` (octave / window shift) + `▲ ▼` (semitone bend, hold). Applies to all keys in every mode
+
 ## [17] - 2026-06-02
 ### 추가 / Added
 - 🎚️ 피아노 상단 바에 **옥타브 −/+ 버튼**과 현재 옥타브 표시 추가 — 모든 모드에서 모든 건반을 한 옥타브씩 이동

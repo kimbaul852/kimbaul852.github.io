@@ -267,22 +267,20 @@
     background: linear-gradient(90deg, var(--amber), var(--magenta), var(--cyan));
     opacity: 0.85;
   }
-  .octctl { display: flex; align-items: center; gap: 6px; flex: none; }
-  .octctl .octlabel {
-    font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.12em;
-    color: var(--dim); text-transform: uppercase;
-  }
+  .navctl { display: flex; align-items: center; gap: 5px; flex: none; }
+  .navdiv { width: 1px; height: 20px; background: rgba(255,255,255,0.16); margin: 0 4px; }
   .octbtn {
     width: 30px; height: 26px; border-radius: 7px; cursor: pointer; flex: none;
     background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
-    color: var(--ink); font-size: 15px; line-height: 1;
+    color: var(--ink); font-size: 14px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
     transition: background 0.12s, transform 0.06s, border-color 0.12s;
   }
   .octbtn:hover { border-color: rgba(255,174,59,0.5); }
   .octbtn:active { transform: scale(0.9); }
-  .octval {
-    min-width: 42px; text-align: center;
-    font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; color: var(--amber);
+  .octbtn.bend { color: var(--cyan); }
+  .octbtn.bend:active, .octbtn.bend.holding {
+    background: rgba(75,227,210,0.18); border-color: var(--cyan);
   }
 
   .rowwrap { display: flex; flex-direction: column; gap: 6px; }
@@ -530,11 +528,14 @@
 
 <div class="stage">
   <div class="pianobar">
-    <div class="octctl">
-      <span class="octlabel">Octave</span>
-      <button class="octbtn" id="octDownBtn" aria-label="옥타브 내림">−</button>
-      <span class="octval" id="octBarVal">±0</span>
-      <button class="octbtn" id="octUpBtn" aria-label="옥타브 올림">+</button>
+    <div class="navctl">
+      <button class="octbtn" id="octDownBtn" aria-label="옥타브 내림" title="옥타브 ↓">«</button>
+      <button class="octbtn" id="winDownBtn" aria-label="창 왼쪽" title="창 ←">‹</button>
+      <button class="octbtn" id="winUpBtn" aria-label="창 오른쪽" title="창 →">›</button>
+      <button class="octbtn" id="octUpBtn" aria-label="옥타브 올림" title="옥타브 ↑">»</button>
+      <span class="navdiv"></span>
+      <button class="octbtn bend" id="bendUpBtn" aria-label="벤드 올림" title="벤드 ↑(반음)">▲</button>
+      <button class="octbtn bend" id="bendDownBtn" aria-label="벤드 내림" title="벤드 ↓(반음)">▼</button>
     </div>
     <div class="feltbar"></div>
   </div>
@@ -1144,6 +1145,12 @@
   // shift every active piano by one octave (works in all modes)
   function octaveAll(dir) {
     pianos.forEach(p => p.shift(dir * 7));
+    refreshControlReadouts();
+    flashHit();
+  }
+  // shift every active piano window by one white key
+  function windowAll(dir) {
+    pianos.forEach(p => p.shift(dir));
     refreshControlReadouts();
     flashHit();
   }
@@ -1873,6 +1880,20 @@
   wire('metroBtn', () => { lp.metro = !lp.metro; updateLooperUI(); scheduleSave(); });
   wire('octDownBtn', () => octaveAll(-1));
   wire('octUpBtn',   () => octaveAll(1));
+  wire('winDownBtn', () => windowAll(-1));
+  wire('winUpBtn',   () => windowAll(1));
+  // bend buttons: press-and-hold to bend a semitone, release to return
+  function bindBendBtn(id, dir) {
+    const el = document.getElementById(id);
+    const start = e => { e.preventDefault(); el.classList.add('holding'); bendStart(dir); refocusIfEnabled(); };
+    const end = () => { el.classList.remove('holding'); bendRelease(dir); };
+    el.addEventListener('pointerdown', start);
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    el.addEventListener('pointerleave', e => { if (e.buttons) end(); });
+  }
+  bindBendBtn('bendUpBtn', 1);
+  bindBendBtn('bendDownBtn', -1);
   wire('bpmDown',  () => setBpm(lp.bpm - 4));
   wire('bpmUp',    () => setBpm(lp.bpm + 4));
   wire('barsDown', () => setBars(lp.bars - 1));
