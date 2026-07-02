@@ -70,7 +70,38 @@
     background: linear-gradient(100deg, var(--amber), var(--magenta) 55%, var(--cyan));
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
+  .appbar { flex-wrap: wrap; row-gap: 8px; }
+  .appbar-left { display: flex; align-items: center; gap: 10px; }
   .appbar-actions { display: flex; align-items: center; gap: 9px; }
+  .apptoggle {
+    display: flex; background: var(--panel); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px; overflow: hidden;
+  }
+  .apptoggle button {
+    border: none; background: transparent; cursor: pointer;
+    font-size: 15px; line-height: 1; padding: 7px 11px;
+    filter: grayscale(0.6) opacity(0.6); transition: background 0.15s, filter 0.15s;
+  }
+  .apptoggle button.on { background: var(--amber); filter: none; }
+
+  /* ---- 러닝 코드(iframe) 뷰 ---- */
+  .chordview { display: none; }
+  body[data-app="chord"] { height: 100vh; overflow: hidden; padding-bottom: 0; }
+  body[data-app="chord"] .chordview {
+    display: block; flex: 1 1 auto; min-height: 0; width: min(1100px, 97vw);
+  }
+  .chordview iframe {
+    width: 100%; height: 100%; border: 0; display: block;
+    border-radius: 16px 16px 0 0; background: #14161D;
+  }
+  body[data-app="chord"] .controls,
+  body[data-app="chord"] .hintbar,
+  body[data-app="chord"] .stage,
+  body[data-app="chord"] .looper,
+  body[data-app="chord"] .tracks,
+  body[data-app="chord"] .transport,
+  body[data-app="chord"] #armBtn { display: none !important; }
+  body[data-view="sheet"] .chordview { display: none !important; }
   .iconbtn {
     width: 42px; height: 42px; border-radius: 12px; cursor: pointer; flex: none;
     background: var(--panel); border: 1px solid rgba(255,255,255,0.08);
@@ -501,7 +532,13 @@
        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
 <div class="appbar">
-  <div class="brand">KEYS</div>
+  <div class="appbar-left">
+    <div class="brand">KEYS</div>
+    <div class="apptoggle" id="appToggle">
+      <button data-app="piano" class="on" title="피아노 / Piano" aria-label="피아노">🎹</button>
+      <button data-app="chord" title="러닝 코드 / Chords" aria-label="러닝 코드">🎵</button>
+    </div>
+  </div>
   <div class="appbar-actions">
     <button class="armbtn" id="armBtn"><span class="dot"></span><span class="lbl"></span></button>
     <button class="iconbtn" id="sheetBtn" aria-label="악보 보기 / Sheet view" title="악보 보기 / Sheet view">
@@ -518,6 +555,11 @@
       </svg>
     </button>
   </div>
+</div>
+
+<!-- 러닝 코드 (Chord Navigator) — 격리된 iframe -->
+<div class="chordview" id="chordview">
+  <iframe id="chordFrame" title="러닝 코드 / Chord Navigator" allow="autoplay"></iframe>
 </div>
 
 <div class="controls" id="controls"><!-- mode-specific controls injected here --></div>
@@ -1179,6 +1221,7 @@
   const capture = document.getElementById('capture');
   const armBtn = document.getElementById('armBtn');
   let kbEnabled = false;
+  let appMode = 'piano';   // 'piano' | 'chord' — top-level app view
   function focusCapture() {
     capture.style.pointerEvents = 'auto';
     capture.focus({ preventScroll: true });
@@ -1220,6 +1263,7 @@
   }
   function handleDown(e) {
     if (listening) return;
+    if (appMode === 'chord') return;   // chord app (iframe) owns the keyboard
     // this handler is bound to BOTH capture and window; the same event can
     // bubble through both. mark it so we never process one keypress twice.
     if (e._keysHandled) return;
@@ -1263,6 +1307,7 @@
   }
   function handleUp(e) {
     if (listening) return;
+    if (appMode === 'chord') return;
     if (e._keysHandled) return;
     e._keysHandled = true;
     const k = normKey(e);
@@ -1983,6 +2028,28 @@
     e.target.value = '';
   });
 
+  // ============ app view: Piano ↔ Chord (러닝 코드) ============
+  const APP_KEY = 'keys.appmode.v1';
+  const chordFrame = document.getElementById('chordFrame');
+  let chordLoaded = false;
+  function setApp(m) {
+    appMode = (m === 'chord') ? 'chord' : 'piano';
+    document.body.setAttribute('data-app', appMode);
+    document.querySelectorAll('#appToggle button').forEach(b =>
+      b.classList.toggle('on', b.dataset.app === appMode));
+    if (appMode === 'chord') {
+      // hand off: stop the piano's loop, drop keyboard arming, load chord app once
+      try { looperStop(); } catch (e) {}
+      if (kbEnabled) { kbEnabled = false; capture.blur(); armBtn.classList.remove('armed'); pianos.forEach(p => p.releaseHeld()); }
+      if (!chordLoaded) { chordFrame.src = 'chord.html'; chordLoaded = true; }
+    }
+    try { localStorage.setItem(APP_KEY, appMode); } catch (e) {}
+  }
+  document.getElementById('appToggle').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    setApp(b.dataset.app);
+  });
+
   // ============ init ============
   loadState();              // restore session (params, layout, shortcuts, loop)
   loadSheet();
@@ -1995,6 +2062,9 @@
   updateLooperUI();
   renderSheet();
   applySheetView();
+  let savedApp = 'piano';
+  try { savedApp = localStorage.getItem(APP_KEY) || 'piano'; } catch (e) {}
+  setApp(savedApp);
 })();
 </script>
 </body>

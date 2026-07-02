@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Chord Navigator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14161D;
+    --panel:#1B1E27;
+    --panel-2:#232733;
+    --line:#2E3342;
+    --ink:#ECE7DD;
+    --muted:#8A8F9C;
+    --muted-2:#646B7A;
+    --home:#E8B14C;       /* 목적지 / 해결 */
+    --home-dim:#5a4a26;
+    --borrow:#9B8CFF;     /* 차용 / 바깥 색 */
+    --borrow-dim:#3b3560;
+    --tension:#5FB7B3;    /* ii–V 텐션 */
+    --radius:11px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',-apple-system,system-ui,'Apple SD Gothic Neo','Pretendard',sans-serif;
+    min-height:100vh;
+    padding:18px 14px calc(150px + env(safe-area-inset-bottom,0px));
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:560px;margin:0 auto;}
+
+  /* ---- top bar ---- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+  .kbtoggle{
+    flex:0 0 auto;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:11px;
+    padding:10px 13px;color:var(--muted);white-space:nowrap;
+  }
+  .kbtoggle.on{background:var(--tension);border-color:var(--tension);color:#0c1a1c;}
+  .kbtoggle:active{transform:scale(.98);}
+  .barbtn{
+    display:inline-flex;align-items:center;gap:10px;cursor:pointer;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:11px;
+    padding:10px 14px;color:var(--ink);font-family:inherit;
+    max-width:100%;
+  }
+  .barbtn:active{transform:scale(.98);}
+  .barbtn .ico{position:relative;width:16px;height:11px;flex:0 0 auto;}
+  .barbtn .ico::before,.barbtn .ico::after,.barbtn .ico{box-sizing:border-box;}
+  .barbtn .ico{border-top:2px solid var(--muted);border-bottom:2px solid var(--muted);}
+  .barbtn .ico::after{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:100%;border-top:2px solid var(--muted);}
+  .barbtn .state{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--ink);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em;
+  }
+
+  /* ---- drawer ---- */
+  .scrim{
+    position:fixed;inset:0;background:rgba(6,8,12,.58);
+    opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:40;
+  }
+  .scrim.open{opacity:1;pointer-events:auto;}
+  .drawer{
+    position:fixed;top:0;right:0;height:100%;width:86vw;max-width:340px;
+    background:var(--panel);border-left:1px solid var(--line);
+    transform:translateX(101%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+    z-index:50;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:22px 18px 36px;box-shadow:-16px 0 40px -12px rgba(0,0,0,.6);
+  }
+  .drawer.open{transform:translateX(0);}
+  .drawer .close{
+    position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:9px;
+    background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
+    font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .drawer .eyebrow{margin-top:6px;}
+  .drawer h1{margin-bottom:6px;}
+  .drawer-sec{margin-top:20px;}
+  .drawer-help{
+    margin-top:22px;padding-top:16px;border-top:1px solid var(--line);
+    color:var(--muted-2);font-size:11.5px;line-height:1.6;
+  }
+  .drawer-help b{color:var(--muted);font-weight:600;}
+
+  /* ---- header (in drawer) ---- */
+  .eyebrow{
+    font-size:11px;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--muted-2);font-weight:600;margin-bottom:6px;
+  }
+  h1{
+    font-family:'Fraunces',Georgia,serif;
+    font-weight:600;font-size:27px;line-height:1.04;margin:0 0 4px;
+    letter-spacing:-.01em;
+  }
+  .sub{color:var(--muted);font-size:13px;line-height:1.45;margin:0;}
+
+  /* ---- controls ---- */
+  .controls{
+    display:flex;gap:10px;align-items:stretch;margin:0 0 6px;flex-wrap:wrap;
+  }
+  .keysel{position:relative;flex:1 1 150px;min-width:130px;}
+  .keysel label{
+    position:absolute;top:7px;left:13px;font-size:9.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted-2);font-weight:600;pointer-events:none;
+  }
+  select{
+    appearance:none;-webkit-appearance:none;width:100%;
+    background:var(--panel-2);color:var(--ink);border:1px solid var(--line);
+    border-radius:var(--radius);padding:22px 38px 9px 12px;
+    font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;
+    cursor:pointer;
+  }
+  .keysel::after{
+    content:"";position:absolute;right:15px;top:55%;width:8px;height:8px;
+    border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);
+    transform:translateY(-50%) rotate(45deg);pointer-events:none;
+  }
+  .toggle{
+    display:flex;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:var(--radius);padding:4px;gap:3px;
+  }
+  .toggle button{
+    border:0;background:transparent;color:var(--muted);
+    font-family:inherit;font-size:13px;font-weight:600;
+    padding:9px 14px;border-radius:8px;cursor:pointer;transition:.15s;white-space:nowrap;
+  }
+  .toggle button.on{background:var(--home);color:#1a1407;}
+
+  .vrow{display:flex;align-items:center;gap:11px;margin:10px 0 0;}
+  .vrow .vlabel{
+    font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--muted-2);font-weight:600;flex:0 0 auto;
+  }
+  .vtoggle{
+    display:flex;flex-wrap:wrap;flex:1;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:var(--radius);padding:4px;gap:3px;
+  }
+  .vtoggle button{
+    flex:1 1 28%;min-width:0;border:0;background:transparent;color:var(--muted);
+    font-family:inherit;font-size:12.5px;font-weight:600;
+    padding:7px 4px;border-radius:8px;cursor:pointer;transition:.15s;line-height:1.15;
+  }
+  .vtoggle button .vt{
+    display:block;font-size:8.5px;font-weight:500;opacity:.65;margin-top:1px;
+    font-family:'IBM Plex Mono',monospace;letter-spacing:.02em;
+  }
+  .vtoggle button.on{background:var(--borrow);color:#15102e;}
+  .vtoggle button.on .vt{opacity:.7;}
+
+  .hint{
+    color:var(--muted-2);font-size:11.5px;line-height:1.5;margin:10px 2px 14px;
+  }
+  .hint b{color:var(--muted);font-weight:600;}
+
+  /* ---- harmony table : 양 끝 고정 + 가운데 가로 스크롤 ---- */
+  .scroller{
+    position:relative;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+  }
+  table.harm{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;}
+  .harm th,.harm td{padding:0;}
+  .harm thead th{
+    font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-2);
+    font-weight:600;background:var(--panel-2);padding:8px 4px;text-align:center;
+    border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+  .harm thead th.home{color:var(--home);}
+  .harm thead th.borrow{color:var(--borrow);}
+  .harm thead th.alt{color:var(--tension);opacity:.85;}
+  /* 그룹 헤더 (준비 / V 미는 코드 / 색채) */
+  .harm thead th.grp{
+    font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;
+    color:var(--muted-2);padding:6px 4px;background:var(--panel-2);
+    border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+  .harm thead th.grp.prep{color:var(--tension);opacity:.7;}
+  .harm thead th.grp.color{color:var(--borrow);opacity:.7;}
+  .harm thead th.grp.push{
+    color:var(--tension);background:#16242a;
+    border-left:1px solid var(--line);border-right:1px solid var(--line);
+    border-bottom:2px solid var(--tension);
+  }
+  .harm td{border-bottom:1px solid var(--line);padding:6px 4px;vertical-align:top;}
+  .harm tr:last-child td{border-bottom:0;}
+  .harm td.c-deg{vertical-align:middle;}
+
+  .c-deg{width:30px;min-width:30px;}
+  .c-prep{width:70px;min-width:70px;}
+  .c-app{width:72px;min-width:72px;}
+  .c-dest{width:118px;min-width:118px;}
+
+  /* 얼린 열 : 왼쪽(도수·ii) / 오른쪽(목적지 스택) */
+  .col-l{position:-webkit-sticky;position:sticky;left:0;z-index:4;background:var(--panel);}
+  .col-l2{position:-webkit-sticky;position:sticky;left:30px;z-index:4;background:var(--panel);
+          box-shadow:7px 0 9px -7px rgba(0,0,0,.6);}
+  .col-r{position:-webkit-sticky;position:sticky;right:0;z-index:4;background:var(--panel);
+         box-shadow:-7px 0 9px -7px rgba(0,0,0,.6);}
+  thead .col-l,thead .col-l2,thead .col-r{z-index:6;background:var(--panel-2);}
+
+  .deg{
+    display:flex;align-items:center;justify-content:center;
+    color:var(--muted);font-family:'IBM Plex Mono',monospace;
+    font-size:13px;font-weight:600;height:100%;
+  }
+  .destcols{display:flex;gap:5px;align-items:flex-start;}
+  .destmain,.destvar{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:4px;}
+  .vcap{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);
+    text-align:center;font-weight:600;padding-bottom:1px;}
+
+  /* chord chips */
+  .chip{
+    width:100%;border:1px solid var(--line);background:var(--panel-2);
+    color:var(--ink);border-radius:8px;cursor:pointer;position:relative;
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;
+    line-height:1.1;padding:9px 3px;display:flex;align-items:center;justify-content:center;
+    transition:transform .08s,background .15s,border-color .15s,box-shadow .15s;
+    text-align:center;white-space:nowrap;letter-spacing:-.02em;min-height:40px;
+  }
+  .chip .b5{font-size:9px;vertical-align:super;opacity:.85;}
+  .chip:active{transform:scale(.95);}
+  .chip.dash{background:transparent;border-color:transparent;color:var(--muted-2);cursor:default;min-height:40px;}
+  .chip.dash:active{transform:none;}
+  .invbadge{
+    position:absolute;top:-5px;right:-4px;z-index:3;
+    background:var(--tension);color:#08171a;font-size:8.5px;font-weight:700;
+    border-radius:6px;padding:0 3px;line-height:14px;min-width:14px;text-align:center;
+    box-shadow:0 0 0 1.5px var(--panel);font-family:'IBM Plex Mono',monospace;
+  }
+  .chip.selected{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--tension);}
+
+  /* 편집 토글 + 편집 중 표시 */
+  .editToggle{
+    margin-left:10px;flex:0 0 auto;cursor:pointer;font-family:inherit;
+    font-size:11px;font-weight:600;color:var(--muted);
+    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:4px 9px;
+  }
+  .editToggle.on{background:var(--tension);border-color:var(--tension);color:#08171a;}
+  .invbar.editing{box-shadow:0 0 0 1px var(--tension) inset;}
+  .invbar.editing .invtitle{color:var(--tension);}
+
+  .chip.tension{color:var(--tension);}
+  .chip.alt{color:var(--tension);background:#1d2630;border-color:#2c3a40;opacity:.92;}
+  .chip.home{background:var(--home-dim);border-color:#7a6531;color:#FCE7B6;}
+  .chip.home.seventh{background:#46381c;border-color:#5f4e28;color:#EAD3A0;font-size:11.5px;padding:6px 2px;min-height:0;}
+  .chip.borrow{background:var(--borrow-dim);border-color:#5a5290;color:#E4DEFF;}
+  .destmain .chip.borrow{font-size:11.5px;padding:6px 2px;min-height:0;}
+  .chip.var{background:#352b16;border-color:#4a3c1d;color:#DCC68F;
+    font-size:10.5px;padding:5px 1px;min-height:0;letter-spacing:-.04em;}
+
+  /* playing state */
+  .chip.playing{box-shadow:0 0 0 2px var(--bg),0 0 0 4px currentColor;transform:scale(1.04);animation:pulse .5s ease;}
+  .chip.home.playing{box-shadow:0 0 0 2px var(--bg),0 0 18px 1px var(--home);}
+  @keyframes pulse{0%{transform:scale(.9);}60%{transform:scale(1.07);}100%{transform:scale(1.04);}}
+
+  footer{margin-top:18px;color:var(--muted-2);font-size:11px;line-height:1.55;text-align:center;}
+  footer .dot{color:var(--home);}
+
+  /* ---- 연주용 가상 키보드 (하단 고정, 슬라이더 위) ---- */
+  .vkbd{
+    position:fixed;left:0;right:0;bottom:var(--invbar-h,116px);z-index:31;
+    background:rgba(16,18,24,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);padding:9px 12px 11px;
+  }
+  .vkbd[hidden]{display:none;}
+  .vkinner{max-width:560px;margin:0 auto;}
+  .vkhead{margin-bottom:6px;}
+  .vktitle{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--tension);font-weight:600;}
+  .vkguide{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--ink);line-height:1.3;}
+  .vkguide b{font-family:'IBM Plex Mono',monospace;color:var(--home);font-weight:600;}
+  .vkguide .mod{color:var(--muted-2);font-size:10px;}
+
+  /* ---- 하단 고정 전위 슬라이더 ---- */
+  .invbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:30;
+    background:rgba(20,22,29,.93);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border-top:1px solid var(--line);
+    padding:9px 16px calc(11px + env(safe-area-inset-bottom,0px));
+    transition:opacity .2s;
+  }
+  .invinner{max-width:560px;margin:0 auto;}
+  /* 미니 건반 (보이싱 시각화) */
+  .pianowrap{margin-bottom:9px;}
+  .piano{position:relative;display:flex;height:32px;border-radius:5px;overflow:hidden;
+    background:#0c0e13;border:1px solid #000;}
+  .wkey{flex:1 0 0;min-width:0;border-right:1px solid #0c0e13;
+    background:linear-gradient(#efebe2,#d4cfc2);}
+  .wkey:last-child{border-right:0;}
+  .bkey{position:absolute;top:0;width:8px;height:62%;transform:translateX(-50%);z-index:2;
+    background:linear-gradient(#2c2f38,#13151b);border-radius:0 0 2px 2px;box-shadow:0 1px 1px rgba(0,0,0,.4);}
+  .wkey.on{background:linear-gradient(#FCE7B6,var(--home));}
+  .bkey.on{background:linear-gradient(#F4D27A,#caa23f);}
+  .invhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;}
+  .invtitle{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-2);font-weight:600;}
+  .invval{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:var(--home);}
+  .invbar input[type=range]{
+    width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;
+    background:linear-gradient(var(--panel-2),var(--panel-2));outline:none;margin:0;
+  }
+  .invbar input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+    background:var(--home);border:3px solid #14110a;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.4);
+  }
+  .invbar input[type=range]::-moz-range-thumb{
+    width:24px;height:24px;border-radius:50%;background:var(--home);border:3px solid #14110a;cursor:pointer;
+  }
+  .invticks{display:flex;justify-content:space-between;margin-top:5px;
+    font-size:9px;color:var(--muted-2);font-family:'IBM Plex Mono',monospace;}
+  .invnote{display:none;font-size:9.5px;color:var(--muted-2);text-align:center;margin-top:5px;}
+  .invbar.disabled{opacity:.45;}
+  .invbar.disabled input[type=range]{pointer-events:none;}
+  .invbar.disabled .invticks{visibility:hidden;}
+  .invbar.disabled .invnote{display:block;}
+
+  @media (max-width:400px){
+    .chip{font-size:12px;padding:9px 2px;}
+    .chip.home.seventh,.destmain .chip.borrow{font-size:11px;}
+    .chip.var{font-size:9.5px;}
+    .chip .b5{font-size:8px;}
+    .c-prep{width:60px;min-width:60px;}
+    .c-app{width:64px;min-width:64px;}
+    .c-dest{width:104px;min-width:104px;}
+    body{padding:16px 8px calc(150px + env(safe-area-inset-bottom,0px));}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <button class="barbtn" id="openDrawer" aria-label="설정 열기">
+      <span class="ico"></span>
+      <span class="state" id="barState">C Major</span>
+    </button>
+    <button class="kbtoggle" id="kbToggle" aria-label="키보드 연주 모드">⌨ 연주</button>
+  </div>
+
+  <p class="hint">
+    가운데 <b>미는 코드</b>를 옆으로 쓸며 비교 · 누르고 있으면 지속음.
+  </p>
+
+  <div class="scroller" id="grid"></div>
+
+  <footer>
+    Piano · WebAudio <span class="dot">●</span> 청음 중심 학습 도구
+  </footer>
+</div>
+
+<div class="vkbd" id="vkbd" hidden>
+  <div class="vkinner">
+    <div class="vkhead">
+      <span class="vktitle">⌨ 블루투스 키보드 연주 중</span>
+    </div>
+    <div class="vkguide">
+      <div><b>1·2·3·4</b> 목적지 <span class="mod">⇧7th · ⌃차용 · ⇧⌃sus4</span></div>
+      <div><b>Q·W·E·R</b> 미는 코드 <span class="mod">⇧SubV7 · ⌃°7 · ⇧⌃백도어</span></div>
+      <div><b>A·S·D·F</b> ii(준비) · <b>←→</b> 전위 · <b>↑↓</b> 옥타브</div>
+    </div>
+  </div>
+</div>
+
+<div class="invbar" id="invbar">
+  <div class="invinner">
+    <div class="pianowrap"><div class="piano" id="piano"></div></div>
+    <div class="invhead">
+      <span class="invtitle">전위 · Inversion</span>
+      <span class="invval" id="invVal">근음</span>
+      <button class="editToggle" id="editToggle" aria-label="칸별 전위 편집">✎ 편집</button>
+    </div>
+    <input type="range" id="invSlider" min="-3" max="3" step="0.01" value="0" aria-label="전위 조절">
+    <div class="invticks"><span>-3</span><span>-2</span><span>-1</span><span>근음</span><span>+1</span><span>+2</span><span>+3</span></div>
+    <div class="invnote">블록·평평·균등에서 조절 · 편집은 평평 세트</div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="설정">
+  <button class="close" id="closeDrawer" aria-label="닫기">✕</button>
+  <div class="eyebrow">Harmony · ii–V–I</div>
+  <h1>Chord Navigator</h1>
+  <p class="sub">조성을 고르고, 코드가 어디로 <em>가는지</em>를 들어보세요. 한 행은 같은 목적지로 가는 여러 길입니다.</p>
+
+  <div class="drawer-sec">
+    <div class="controls">
+      <div class="keysel">
+        <label>Key</label>
+        <select id="keySelect" aria-label="조성 선택"></select>
+      </div>
+      <div class="toggle" role="tablist">
+        <button id="mBasic" class="on">기본</button>
+        <button id="mExt">확장</button>
+      </div>
+    </div>
+
+    <div class="vrow">
+      <span class="vlabel">Voicing</span>
+      <div class="vtoggle" id="vtoggle">
+        <button data-v="block" class="on">블록<span class="vt">중심정렬</span></button>
+        <button data-v="flat">평평<span class="vt">내 보이싱</span></button>
+        <button data-v="even">균등<span class="vt">자동정렬</span></button>
+        <button data-v="shell">셸<span class="vt">루트·3·7</span></button>
+        <button data-v="smooth">스무스<span class="vt">voice-led</span></button>
+      </div>
+    </div>
+    <div class="vrow" id="evenRefRow" style="display:none">
+      <span class="vlabel">균등 기준</span>
+      <div class="vtoggle" id="evenRef">
+        <button data-r="top" class="on">윗음<span class="vt">top</span></button>
+        <button data-r="center">중심<span class="vt">center</span></button>
+        <button data-r="bass">베이스<span class="vt">bass</span></button>
+      </div>
+    </div>
+  </div>
+
+  <p class="drawer-help">
+    <b>준비(ii)</b>와 <b>도착</b>은 양 끝 고정. 가운데 <b>미는 코드</b>(V7·SubV7·°7·백도어)를 쓸며 비교하세요. 도착 스택은 <b>기본 · 7th · 변형(sus4·sus2·add9) · 차용</b>으로, 목적지를 여러 색으로 칠해볼 수 있습니다. 누르고 있으면 지속, 짧게 눌러도 여운이 남습니다.
+  </p>
+</aside>
+
+<script>
+/* ============================================================
+   1. 음악 이론 엔진  (12 조성 계산)
+   ============================================================ */
+const LETTERS = ['C','D','E','F','G','A','B'];
+const LETTER_PC = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+const FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+// 장조 각 조성의 음이름 (조표 기준)
+const KEYS = {
+  'C' :['C','D','E','F','G','A','B'],
+  'Db':['Db','Eb','F','Gb','Ab','Bb','C'],
+  'D' :['D','E','F#','G','A','B','C#'],
+  'Eb':['Eb','F','G','Ab','Bb','C','D'],
+  'E' :['E','F#','G#','A','B','C#','D#'],
+  'F' :['F','G','A','Bb','C','D','E'],
+  'Gb':['Gb','Ab','Bb','Cb','Db','Eb','F'],
+  'G' :['G','A','B','C','D','E','F#'],
+  'Ab':['Ab','Bb','C','Db','Eb','F','G'],
+  'A' :['A','B','C#','D','E','F#','G#'],
+  'Bb':['Bb','C','D','Eb','F','G','A'],
+  'B' :['B','C#','D#','E','F#','G#','A#'],
+};
+const KEY_ORDER = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const FLAT_KEYS = new Set(['C','F','Bb','Eb','Ab','Db','Gb']);
+
+function pcOf(name){
+  let pc = LETTER_PC[name[0]];
+  for (const ch of name.slice(1)){ if(ch==='#')pc++; else if(ch==='b')pc--; }
+  return ((pc%12)+12)%12;
+}
+function spellPc(pc, flat){ return (flat?FLAT:SHARP)[((pc%12)+12)%12]; }
+
+// 특정 글자(letter)로 목표 음높이를 표기. 겹임표면 이명동음으로 폴백.
+function spellWithLetter(letterIdx, targetPc, flat){
+  const letter = LETTERS[((letterIdx%7)+7)%7];
+  const nat = LETTER_PC[letter];
+  let d = (((targetPc - nat)%12)+12)%12; if(d>6)d-=12;
+  if(d===0)  return letter;
+  if(d===1)  return letter+'#';
+  if(d===-1) return letter+'b';
+  return spellPc(targetPc, flat); // ±2 (겹임표) → 폴백
+}
+// 차용·텐션 표기 가독화 (Cb→B, Fb→E, E#→F, B#→C)
+function readable(name){
+  return ({'Cb':'B','Fb':'E','E#':'F','B#':'C'})[name] || name;
+}
+
+// 화음 구성음 인터벌
+const SHAPE = {
+  maj:[0,4,7], min:[0,3,7], dim:[0,3,6],
+  maj7:[0,4,7,11], dom7:[0,4,7,10], m7:[0,3,7,10], m7b5:[0,3,6,10], dim7:[0,3,6,9],
+  sus4:[0,5,7], sus2:[0,2,7], add9:[0,4,7,14], madd9:[0,3,7,14]
+};
+// 라벨 렌더 (m7b5의 b5만 위첨자 처리용 마크업)
+function chordHTML(label){
+  return label.replace('(b5)','<span class="b5">ø</span>')
+              .replace('b5','<span class="b5">ø</span>');
+}
+
+const DEG_LABEL = ['I','ii','iii','IV','V','vi','vii°'];
+const BASIC_DEGREES = [1,4,5,6];
+const ALL_DEGREES   = [1,2,3,4,5,6,7];
+
+function buildRow(key, d){
+  const scale = KEYS[key];
+  const flat = FLAT_KEYS.has(key);
+  const destNote = scale[d-1];
+  const destPc = pcOf(destNote);
+  const isMajorTarget = (d===1||d===4||d===5);
+  const isMinorTarget = (d===2||d===3||d===6);
+
+  // 목적지 (트라이어드)
+  let destType = isMajorTarget?'maj':(isMinorTarget?'min':'dim');
+  let destLabel = destNote + (isMinorTarget?'m':(d===7?'dim':''));
+
+  // 목적지의 다이어토닉 7화음
+  let s7type, s7suffix;
+  if(d===1||d===4){ s7type='maj7'; s7suffix='△7'; }   // I, IV
+  else if(d===5){   s7type='dom7'; s7suffix='7'; }      // V
+  else if(d===7){   s7type='m7b5'; s7suffix='m7(b5)'; } // vii°
+  else {            s7type='m7';   s7suffix='m7'; }     // ii, iii, vi
+  const dest7 = { label:destNote+s7suffix, type:s7type, pc:destPc, kind:'home' };
+
+  let ii=null, V7=null, subv=null, dimapp=null, backdoor=null;
+  if(d!==7){
+    const aboveIdx = LETTERS.indexOf(destNote[0]) + 1;
+    const belowIdx = LETTERS.indexOf(destNote[0]) - 1;
+    // 세컨더리 V7 : 목적지 위 완전5도 (조표상 음이름)
+    const v7Note = scale[(d-1+4)%7];
+    V7 = { label:v7Note+'7', type:'dom7', pc:pcOf(v7Note), kind:'tension' };
+    // ii : 목적지 위 장2도
+    const iiPc = (destPc+2)%12;
+    let iiName = readable(spellWithLetter(aboveIdx, iiPc, flat));
+    ii = { label:iiName+(isMinorTarget?'m7(b5)':'m7'),
+           type:(isMinorTarget?'m7b5':'m7'), pc:iiPc, kind:'tension' };
+    // 트라이톤 대리 SubV7 (♭II7) : 목적지 반음 위 도미넌트
+    const subPc=(destPc+1)%12;
+    let subName=readable(spellWithLetter(aboveIdx, subPc, true));
+    subv={ label:subName+'7', type:'dom7', pc:subPc, kind:'tension2' };
+    // 보조감7 (°7) : 목적지 반음 아래에서 상행 해결
+    const dPc=(destPc+11)%12;
+    let dName=readable(spellWithLetter(belowIdx, dPc, flat));
+    dimapp={ label:dName+'°7', type:'dim7', pc:dPc, kind:'tension2' };
+    // 백도어 도미넌트 (♭VII7) : 목적지 온음 아래 도미넌트
+    const bdPc=(destPc+10)%12;
+    let bdName=readable(spellWithLetter(belowIdx, bdPc, true));
+    backdoor={ label:bdName+'7', type:'dom7', pc:bdPc, kind:'tension2' };
+  }
+
+  // 차용화음 (모달 인터체인지)
+  let borrow;
+  const sameLetterIdx = LETTERS.indexOf(destNote[0]);
+  if(d===1){       borrow={label:destNote+'m', type:'min', pc:destPc}; }        // i
+  else if(d===2){  borrow={label:destNote+'dim', type:'dim', pc:destPc}; }       // ii°
+  else if(d===4){  borrow={label:destNote+'m', type:'min', pc:destPc}; }        // iv
+  else if(d===5){  borrow={label:destNote+'m', type:'min', pc:destPc}; }        // v
+  else { // bIII / bVI / bVII  (장3화음, 반음 내림)
+    const bpc=(destPc-1+12)%12;
+    let bname=readable(spellWithLetter(sameLetterIdx, bpc, flat));
+    borrow={label:bname, type:'maj', pc:bpc};
+  }
+
+  // 목적지 변형 (sus4 · sus2 · add9) — 딤(vii°)에는 두지 않음
+  let vsus4=null, vsus2=null, vadd9=null;
+  if(d!==7){
+    vsus4={ label:destNote+'sus4', type:'sus4', pc:destPc, kind:'home' };
+    vsus2={ label:destNote+'sus2', type:'sus2', pc:destPc, kind:'home' };
+    vadd9={ label:destNote+(isMinorTarget?'m(add9)':'add9'),
+            type:(isMinorTarget?'madd9':'add9'), pc:destPc, kind:'home' };
+  }
+
+  return {
+    degree:d, degLabel:DEG_LABEL[d-1],
+    ii, V7, subv, dimapp, backdoor, dest7,
+    sus4:vsus4, sus2:vsus2, add9:vadd9,
+    dest:{label:destLabel, type:destType, pc:destPc, kind:'home'},
+    borrow:Object.assign(borrow,{kind:'borrow'})
+  };
+}
+
+/* ============================================================
+   2. 오디오 (WebAudio, 피아노풍 블록코드)
+   ============================================================ */
+const BASE_MIDI = 48; // C3 기준
+const MASTER = 0.62;
+let ac=null, master=null, limiter=null, audioReady=false;
+function audio(){
+  if(ac) return ac;
+  ac = new (window.AudioContext||window.webkitAudioContext)();
+  // 리미터: 합쳐진 신호가 천장을 넘으면 눌러서 깨짐(클리핑) 방지
+  limiter = ac.createDynamicsCompressor();
+  limiter.threshold.value = -6;    // -6dB 부터 압축 시작
+  limiter.knee.value      = 6;
+  limiter.ratio.value     = 20;    // 강하게 (리미터처럼)
+  limiter.attack.value    = 0.003;
+  limiter.release.value   = 0.25;
+  master = ac.createGain();
+  master.gain.value = 0.0001;            // 무음에서 시작 (시작 폭발 방지)
+  master.connect(limiter);
+  limiter.connect(ac.destination);
+  return ac;
+}
+// 첫 상호작용에서 컨텍스트를 켜고, 마스터를 0→목표로 부드럽게 올림
+function ensureRunning(){
+  audio();
+  if(ac.state!=='running') ac.resume();
+  if(!audioReady){
+    audioReady=true;
+    const t=ac.currentTime;
+    master.gain.cancelScheduledValues(t);
+    master.gain.setValueAtTime(0.0001, t);
+    master.gain.exponentialRampToValueAtTime(MASTER, t+0.09);  // 약 90ms 페이드인
+  }
+}
+function midiToFreq(m){ return 440*Math.pow(2,(m-69)/12); }
+
+// 한 음 시작: 어택 → 서스테인(누르는 동안 천천히 감쇠), 자동 정지 없음
+function startVoice(midi, vel){
+  const t=ac.currentTime+0.02, f=midiToFreq(midi);   // 살짝 앞당겨 예약 (과거시각 스냅 방지)
+  const g=ac.createGain(); g.gain.value=0.0001; g.connect(master);  // 기본값 1.0 버스트 방지
+  const o1=ac.createOscillator(); o1.type='triangle'; o1.frequency.value=f;
+  const o2=ac.createOscillator(); o2.type='sine'; o2.frequency.value=f*2;
+  const g2=ac.createGain(); g2.gain.value=0.18; o2.connect(g2); g2.connect(g); o1.connect(g);
+  const peak=0.17*vel, sus=peak*0.55;
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(peak, t+0.012);
+  g.gain.exponentialRampToValueAtTime(sus,  t+0.28);
+  g.gain.setTargetAtTime(sus*0.16, t+0.28, 3.4); // 누르고 있는 동안 천천히 줄어듦
+  o1.start(t); o2.start(t);
+  const safety=t+20; o1.stop(safety); o2.stop(safety); // 무한 지속 방지
+  return {g,o1,o2,safety};
+}
+// 음 떼기: 빠르게(전환) 또는 자연스러운 여운(릴리스)
+function releaseVoices(voices, fast){
+  if(!ac||!voices) return;
+  const t=ac.currentTime, tc=fast?0.012:0.6;        // 전환 시 더 빠르게 정리
+  voices.forEach(v=>{ try{
+    v.g.gain.cancelScheduledValues(t);
+    v.g.gain.setValueAtTime(Math.max(v.g.gain.value,0.0001), t);
+    v.g.gain.setTargetAtTime(0.0001, t, tc);
+    const st=Math.min(v.safety, t+(fast?0.08:3.2));
+    v.o1.stop(st); v.o2.stop(st);
+  }catch(e){} });
+}
+/* ---- 보이싱 레이어 : 코드 모델 → 실제 음높이 ---- */
+const REG = { bassLow:45, upLow:57 };          // 베이스 A2~, 상성부 A3~G#4
+const BLOCK_CENTER = 62;                        // 블록 보이싱 정렬 기준(중심음 ≈ D4)
+const EVEN_TOP = 72;                            // 균등-윗음: 공통 최고음(≈ C5)
+const EVEN_BASS = 50;                           // 균등-베이스: 공통 최저음(≈ D3)
+let evenRef = 'top';                            // 균등 정렬 기준: top·center·bass
+function fold(pc, low){ return low + ((((pc-low)%12)+12)%12); }
+
+let inversion = 0;                              // 연주용 전역 오프셋 (-3 … +3)
+let octaveShift = 0;                            // ±1 옥타브 (방향키 상하)
+// 손으로 맞춘 기본 보이싱(전위) — 시작값. 편집 모드에서 덮어쓸 수 있음.
+const DEFAULT_CELL_INV = {
+  // I (목적지 C)
+  '1:ii':-1, '1:V7':1, '1:subv':-1,
+  // ii (목적지 Dm)
+  '2:ii':2, '2:V7':2, '2:subv':2, '2:dimapp':-1, '2:backdoor':-1,
+  // iii (목적지 Em)
+  '3:ii':1, '3:V7':-1, '3:subv':1, '3:dimapp':-2, '3:backdoor':-2, '3:dest':-1,
+  // IV (목적지 F)
+  '4:ii':1, '4:V7':-1, '4:subv':1, '4:dimapp':2, '4:backdoor':2, '4:dest':2,
+  // V (목적지 G)
+  '5:V7':-2, '5:dimapp':1, '5:backdoor':1, '5:dest':1,
+  // vi (목적지 Am)
+  '6:V7':2, '6:dimapp':1, '6:backdoor':1, '6:dest':1,
+  // vii° (목적지 Bdim)
+  '7:dest':1,
+};
+const cellInv = Object.assign({}, DEFAULT_CELL_INV);  // 칸별 기본 전위: "도수:slot" -> int (조성 바뀌어도 유지)
+function cellKey(d,slot){ return d+':'+slot; }
+function getCellInv(d,slot){ return cellInv[cellKey(d,slot)] || 0; }
+let editMode=false, selectedCell=null;          // 전위 편집 모드
+// k>0: 맨 아래 음을 차례로 옥타브 위로 / k<0: 맨 위 음을 차례로 옥타브 아래로
+function invert(notes, k){
+  const arr = notes.slice();
+  for(let i=0;i<Math.abs(k);i++){
+    if(k>0){ let lo=0; for(let j=1;j<arr.length;j++) if(arr[j]<arr[lo]) lo=j; arr[lo]+=12; }
+    else   { let hi=0; for(let j=1;j<arr.length;j++) if(arr[j]>arr[hi]) hi=j; arr[hi]-=12; }
+  }
+  return arr.sort((a,b)=>a-b);
+}
+
+function voiceChord(chord, baseInv){
+  const ivs = SHAPE[chord.type];
+  const root = chord.pc;
+  const cell = (voicing==='flat') ? (baseInv||0) : 0;   // 칸 전위(내 보이싱)는 평평 모드에서만
+  let notes;
+  if (voicing==='block' || voicing==='flat'){    // 중심 정렬 (평평은 칸 전위 추가)
+    const abs = ivs.map(iv => root + iv);
+    const centroid = abs.reduce((a,b)=>a+b,0)/abs.length;
+    const shift = Math.round((BLOCK_CENTER - centroid)/12)*12;
+    notes = invert(abs.map(n => n + shift), cell + inversion);
+  } else if (voicing==='even'){                   // 균등: 자동 전위로 기준 음을 한 줄에 정렬
+    const abs = ivs.map(iv => root + iv);
+    const centroid = abs.reduce((a,b)=>a+b,0)/abs.length;
+    const shift = Math.round((BLOCK_CENTER - centroid)/12)*12;
+    const baseNotes = abs.map(n => n + shift);
+    const metric = nn =>
+        evenRef==='bass'   ? Math.abs(Math.min(...nn) - EVEN_BASS)
+      : evenRef==='center' ? Math.abs(nn.reduce((a,b)=>a+b,0)/nn.length - BLOCK_CENTER)
+      :                      Math.abs(Math.max(...nn) - EVEN_TOP);
+    let bestK=0, bestD=Infinity;                   // 기준 음이 목표에 가장 가까운 전위 선택
+    for(let k=-3;k<=3;k++){
+      const nn=invert(baseNotes,k);
+      const dd=metric(nn);
+      if(dd<bestD){bestD=dd;bestK=k;}
+    }
+    notes = invert(baseNotes, bestK + inversion);
+  } else {
+    const has7  = ivs.length===4;
+    const third = root + ivs[1];
+    const fifth = root + ivs[2];
+    const sev   = has7 ? root + ivs[3] : null;
+    const bass  = fold(root, REG.bassLow);
+    let uppers;
+    if (voicing==='shell')                        // 가이드톤: 3·7 (트라이어드는 3·5)
+      uppers = has7 ? [third, sev] : [third, fifth];
+    else                                          // 스무스: 고정 음역대에 접어 보이스리딩
+      uppers = has7 ? [third, fifth, sev] : [third, fifth];
+    uppers = uppers.map(t => fold(t, REG.upLow)).sort((a,b)=>a-b);
+    notes = [bass, ...uppers];
+  }
+  if (octaveShift) notes = notes.map(n => n + 12*octaveShift);
+  return notes;
+}
+function startChord(chord, baseInv){
+  const ms = voiceChord(chord, baseInv);
+  const base = 1/Math.sqrt(ms.length);
+  const voices = ms.map((m,i)=>startVoice(m, base*(i===0?1.12:1))); // 베이스 살짝↑
+  return { voices, midis:ms };
+}
+
+/* ============================================================
+   3. 렌더 & 인터랙션
+   ============================================================ */
+let currentKey='C', mode='basic', voicing='block';
+const gridEl=document.getElementById('grid');
+const keySel=document.getElementById('keySelect');
+
+KEY_ORDER.forEach(k=>{
+  const o=document.createElement('option'); o.value=k; o.textContent=k+' Major'; keySel.appendChild(o);
+});
+
+function clearPlaying(){ document.querySelectorAll('.playing,.lit').forEach(e=>e.classList.remove('playing','lit')); }
+
+function cellChip(chord, slot, d, cls){
+  return chord
+    ? `<button class="chip ${cls}" data-kind="single" data-d="${d}" data-slot="${slot}">${chordHTML(chord.label)}</button>`
+    : `<div class="chip dash">–</div>`;
+}
+
+function render(){
+  const degs = (mode==='basic')?BASIC_DEGREES:ALL_DEGREES;
+  let html =
+    '<table class="harm"><thead>'+
+      '<tr>'+
+        '<th class="c-deg col-l" rowspan="2">도수</th>'+
+        '<th class="c-prep col-l2" rowspan="2">ii</th>'+
+        '<th class="grp push" colspan="4">V · 미는 코드</th>'+
+        '<th class="c-dest col-r home" rowspan="2">도착</th>'+
+      '</tr>'+
+      '<tr>'+
+        '<th class="c-app">V7</th>'+
+        '<th class="c-app alt">SubV7</th>'+
+        '<th class="c-app alt">°7</th>'+
+        '<th class="c-app alt">백도어</th>'+
+      '</tr>'+
+    '</thead><tbody>';
+
+  degs.forEach(d=>{
+    const r=buildRow(currentKey,d);
+    html+=
+      `<tr data-d="${d}">`+
+        `<td class="c-deg col-l"><div class="deg">${r.degLabel}</div></td>`+
+        `<td class="c-prep col-l2">${cellChip(r.ii,'ii',d,'tension')}</td>`+
+        `<td class="c-app">${cellChip(r.V7,'V7',d,'tension')}</td>`+
+        `<td class="c-app">${cellChip(r.subv,'subv',d,'alt')}</td>`+
+        `<td class="c-app">${cellChip(r.dimapp,'dimapp',d,'alt')}</td>`+
+        `<td class="c-app">${cellChip(r.backdoor,'backdoor',d,'alt')}</td>`+
+        `<td class="c-dest col-r"><div class="destcols">`+
+          `<div class="destmain">`+
+            `<button class="chip home" data-kind="single" data-d="${d}" data-slot="dest">${chordHTML(r.dest.label)}</button>`+
+            `<button class="chip home seventh" data-kind="single" data-d="${d}" data-slot="dest7">${chordHTML(r.dest7.label)}</button>`+
+            `<button class="chip borrow" data-kind="single" data-d="${d}" data-slot="borrow">${chordHTML(r.borrow.label)}</button>`+
+          `</div>`+
+          (r.sus4 ? `<div class="destvar">`+
+            `<button class="chip var" data-kind="single" data-d="${d}" data-slot="sus4">${chordHTML(r.sus4.label)}</button>`+
+            `<button class="chip var" data-kind="single" data-d="${d}" data-slot="sus2">${chordHTML(r.sus2.label)}</button>`+
+            `<button class="chip var" data-kind="single" data-d="${d}" data-slot="add9">${chordHTML(r.add9.label)}</button>`+
+          `</div>` : ``)+
+        `</div></td>`+
+      `</tr>`;
+  });
+  html+='</tbody></table>';
+  gridEl.innerHTML=html;
+  if(typeof decorateBadges==='function') decorateBadges();
+  if(editMode && selectedCell){
+    const el=chipEl(selectedCell.d,selectedCell.slot);
+    if(el) el.classList.add('selected');
+  }
+}
+
+function rowData(d){ return buildRow(currentKey,d); }
+function chipEl(d,slot){
+  return gridEl.querySelector(`.chip[data-d="${d}"][data-slot="${slot}"]`);
+}
+
+/* ---- 누름/뗌 기반 지속음 ---- */
+let held=null;            // {voices, el}
+let downXY=null;          // 스크롤 판별용
+
+function press(d, slot){
+  ensureRunning();
+  if(held){ releaseVoices(held.voices, true); held.el && held.el.classList.remove('playing'); } // 이전 음 빠르게 끊기
+  const chord = rowData(d)[slot];
+  if(!chord){ held=null; setPianoKeys([]); return; }
+  const el = chipEl(d, slot);
+  const s = startChord(chord, getCellInv(d,slot));
+  held = { voices:s.voices, el, d, slot };
+  setPianoKeys(s.midis);            // 건반에 보이싱 표시
+  el && el.classList.add('playing');
+}
+function lift(fast){       // 손을 뗌: 자연스러운 여운(false) / 즉시 끊기(true)
+  if(!held) return;
+  releaseVoices(held.voices, !!fast);
+  held.el && held.el.classList.remove('playing');
+  held=null;
+  setPianoKeys([]);                 // 건반 끄기
+}
+
+// 슬라이더로 전위를 바꾸면 누르고 있는 코드를 새 전위로 다시 울림 (포인터 ID 유지)
+function revoiceHeld(){
+  if(!held) return;
+  const pid=held.pointerId;
+  press(held.d, held.slot);
+  if(held) held.pointerId=pid;
+}
+
+gridEl.addEventListener('pointerdown', e=>{
+  const t=e.target.closest('.chip[data-kind]'); if(!t) return;
+  const d=+t.dataset.d, slot=t.dataset.slot;
+  if(editMode){                          // 편집 모드: 선택 + 미리듣기 (홀드 아님)
+    e.preventDefault();
+    selectCell(d, slot);
+    previewCell(d, slot);
+    return;
+  }
+  downXY={x:e.clientX,y:e.clientY,id:e.pointerId};
+  press(d, slot);
+  if(held) held.pointerId=e.pointerId;
+  // preventDefault 안 함 → 가로 스크롤 제스처는 그대로 살아있음
+});
+gridEl.addEventListener('pointermove', e=>{
+  if(!held||!downXY||e.pointerId!==downXY.id) return;
+  if(Math.abs(e.clientX-downXY.x)>12 || Math.abs(e.clientY-downXY.y)>12){
+    lift(true); downXY=null;   // 끌기=스크롤로 판단 → 음 짧게 끊기
+  }
+});
+window.addEventListener('pointerup', e=>{
+  if(held && e.pointerId===held.pointerId){ downXY=null; lift(false); }   // 코드 누른 손가락을 뗐을 때만
+});
+window.addEventListener('pointercancel', e=>{
+  if(held && e.pointerId===held.pointerId){ downXY=null; lift(true); }
+});
+
+const barState=document.getElementById('barState');
+function updateBar(){
+  const modeKo = (mode==='basic')?'기본':'확장';
+  let voiceKo = {block:'블록',flat:'평평',even:'균등',shell:'셸',smooth:'스무스'}[voicing];
+  if(voicing==='even') voiceKo += '·'+{top:'윗음',center:'중심',bass:'베이스'}[evenRef];
+  barState.textContent = `${currentKey} Major · ${modeKo} · ${voiceKo}`;
+}
+
+const drawer=document.getElementById('drawer'), scrim=document.getElementById('scrim');
+function openDrawer(){ drawer.classList.add('open'); scrim.classList.add('open'); }
+function closeDrawer(){ drawer.classList.remove('open'); scrim.classList.remove('open'); }
+document.getElementById('openDrawer').addEventListener('click', openDrawer);
+document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
+scrim.addEventListener('click', closeDrawer);
+
+keySel.addEventListener('change', e=>{ currentKey=e.target.value; render(); updateBar(); });
+document.getElementById('mBasic').addEventListener('click',()=>{
+  mode='basic'; mBasic.classList.add('on'); mExt.classList.remove('on'); render(); updateBar();
+});
+document.getElementById('mExt').addEventListener('click',()=>{
+  mode='ext'; mExt.classList.add('on'); mBasic.classList.remove('on'); render(); updateBar();
+});
+document.getElementById('vtoggle').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  voicing=b.dataset.v;
+  vtoggle.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+  evenRefRow.style.display = (voicing==='even') ? '' : 'none';
+  if(editMode && voicing!=='flat') setEdit(false);   // 편집은 평평 모드 전용
+  updateBar(); setInvEnabled(); decorateBadges(); revoiceHeld();
+});
+const evenRefRow=document.getElementById('evenRefRow');
+const evenRefEl=document.getElementById('evenRef');
+evenRefEl.addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  evenRef=b.dataset.r;
+  evenRefEl.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+  updateBar(); revoiceHeld();
+});
+
+/* ---- 미니 건반 (보이싱 시각화) ---- */
+const piano=document.getElementById('piano');
+const PIANO_LO=36, PIANO_HI=84;                 // C2 ~ C6
+function buildPiano(){
+  const isBlack=pc=>pc===1||pc===3||pc===6||pc===8||pc===10;
+  let whites='', blacks='', w=0;
+  for(let m=PIANO_LO;m<=PIANO_HI;m++){
+    if(isBlack(((m%12)+12)%12)){ blacks+=`<div class="bkey" data-m="${m}" data-before="${w}"></div>`; }
+    else { whites+=`<div class="wkey" data-m="${m}"></div>`; w++; }
+  }
+  piano.innerHTML=whites+blacks;
+  // 검은건반 위치(흰건반 경계에 맞춤)
+  const W=w;
+  piano.querySelectorAll('.bkey').forEach(b=>{
+    b.style.left=((+b.dataset.before)/W*100)+'%';
+  });
+}
+function setPianoKeys(midis){
+  piano.querySelectorAll('.on').forEach(k=>k.classList.remove('on'));
+  (midis||[]).forEach(m=>{
+    const k=piano.querySelector(`[data-m="${m}"]`);
+    if(k) k.classList.add('on');
+  });
+}
+buildPiano();
+
+/* ---- 전위 슬라이더 (블록 보이싱 전용) ---- */
+const invSlider=document.getElementById('invSlider');
+const invVal=document.getElementById('invVal');
+const invbar=document.getElementById('invbar');
+function invLabel(n){
+  if(n===0) return '근음';
+  return (n>0?'▲ ':'▼ ')+'전위 '+Math.abs(n);
+}
+function slotKo(slot){
+  return {dest:'목적지',dest7:'7th',borrow:'차용',sus4:'sus4',sus2:'sus2',add9:'add9',
+          ii:'ii',V7:'V7',subv:'SubV7',dimapp:'°7',backdoor:'백도어'}[slot]||slot;
+}
+function refreshInvUI(){
+  if(editMode){
+    if(selectedCell){
+      const r=rowData(selectedCell.d);
+      const c=r[selectedCell.slot];
+      invVal.textContent = '✎ '+(c?c.label:slotKo(selectedCell.slot))+' · '+invLabel(getCellInv(selectedCell.d,selectedCell.slot));
+    } else {
+      invVal.textContent = '✎ 칸을 선택하세요';
+    }
+    return;
+  }
+  const oct = octaveShift? ('  ·  '+(octaveShift>0?'8va↑':'8va↓')) : '';
+  invVal.textContent = invLabel(inversion) + oct;
+}
+// 썸은 연속으로 미끄러지되, 소리(전위)는 가장 가까운 단계로 스냅 → 끄는 중 실시간 변경
+function applyInv(){
+  const snapped = Math.round(+invSlider.value);
+  if(editMode){
+    if(!selectedCell) return;
+    const key=cellKey(selectedCell.d,selectedCell.slot);
+    if((cellInv[key]||0)!==snapped){
+      if(snapped===0) delete cellInv[key]; else cellInv[key]=snapped;
+      decorateBadges();
+      previewCell(selectedCell.d, selectedCell.slot);   // 변경 시 미리듣기
+    }
+    refreshInvUI();
+    return;
+  }
+  if(snapped !== inversion){ inversion = snapped; revoiceHeld(); } // 단계가 바뀔 때만 재발음
+  refreshInvUI();
+}
+function syncInv(){ refreshInvUI(); }
+function setInvEnabled(){
+  const on = (voicing==='block'||voicing==='flat'||voicing==='even');
+  invbar.classList.toggle('disabled', !on);
+  invSlider.disabled = !on;
+}
+// 방향키/외부에서 전위·옥타브 변경 (연주용 전역 오프셋)
+function setInversion(n){
+  if(editMode) return;
+  inversion=Math.max(-3,Math.min(3,n));
+  invSlider.value=inversion; refreshInvUI(); revoiceHeld();
+}
+function setOctave(n){
+  octaveShift=Math.max(-1,Math.min(1,n));
+  refreshInvUI(); revoiceHeld();
+}
+invSlider.addEventListener('input', applyInv);
+invSlider.addEventListener('change', ()=>{
+  const v = editMode ? (selectedCell?getCellInv(selectedCell.d,selectedCell.slot):0) : inversion;
+  invSlider.value=v; applyInv();
+});
+
+/* ---- 칸별 전위 편집 모드 ---- */
+let previewTimer=null;
+function previewCell(d,slot){
+  if(!rowData(d)[slot]) return;
+  press(d, slot);
+  clearTimeout(previewTimer);
+  previewTimer=setTimeout(()=>lift(false), 750);
+}
+function selectCell(d,slot){
+  selectedCell={d,slot};
+  gridEl.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
+  const el=chipEl(d,slot); if(el) el.classList.add('selected');
+  invSlider.value=getCellInv(d,slot);
+  refreshInvUI();
+}
+function decorateBadges(){
+  const show = (voicing==='flat');
+  gridEl.querySelectorAll('.chip[data-d][data-slot]').forEach(ch=>{
+    const d=+ch.dataset.d, slot=ch.dataset.slot;
+    const v=show?getCellInv(d,slot):0;
+    let b=ch.querySelector('.invbadge');
+    if(v){
+      if(!b){ b=document.createElement('span'); b.className='invbadge'; ch.appendChild(b); }
+      b.textContent=(v>0?'+':'')+v;
+    } else if(b){ b.remove(); }
+  });
+}
+const editToggle=document.getElementById('editToggle');
+function setEdit(on){
+  editMode=on;
+  editToggle.classList.toggle('on', on);
+  invbar.classList.toggle('editing', on);
+  if(on){
+    lift(true); inversion=0;                // 편집 중엔 전역 오프셋 0
+    if(voicing!=='flat'){                    // 편집은 평평(내 보이싱) 세트를 수정
+      voicing='flat';
+      vtoggle.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.v==='flat'));
+      updateBar(); setInvEnabled();
+    }
+  } else {
+    selectedCell=null; gridEl.querySelectorAll('.chip.selected').forEach(c=>c.classList.remove('selected'));
+  }
+  invSlider.value = on ? 0 : inversion;
+  decorateBadges();
+  refreshInvUI();
+}
+editToggle.addEventListener('click', ()=> setEdit(!editMode));
+
+/* ============================================================
+   키보드 연주 모드
+   ============================================================ */
+// 물리 키 위치로 매핑 (한글 IME·레이아웃과 무관)
+const CODE_NUM  = ['Digit1','Digit2','Digit3','Digit4','Digit5','Digit6','Digit7'];
+const CODE_PUSH = ['KeyQ','KeyW','KeyE','KeyR','KeyT','KeyY','KeyU'];
+const CODE_PREP = ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ'];
+
+function slotFor(rowName, shift, ctrl){
+  if(rowName==='num'){
+    if(ctrl&&shift) return 'sus4';
+    if(ctrl) return 'borrow';
+    if(shift) return 'dest7';
+    return 'dest';
+  }
+  if(rowName==='push'){
+    if(ctrl&&shift) return 'backdoor';
+    if(ctrl) return 'dimapp';
+    if(shift) return 'subv';
+    return 'V7';
+  }
+  return 'ii';
+}
+function keyTarget(code){
+  let idx;
+  if((idx=CODE_NUM.indexOf(code))>=0)  return {row:'num', idx};
+  if((idx=CODE_PUSH.indexOf(code))>=0) return {row:'push', idx};
+  if((idx=CODE_PREP.indexOf(code))>=0) return {row:'prep', idx};
+  return null;
+}
+function degForCol(col){
+  const degs=(mode==='basic')?BASIC_DEGREES:ALL_DEGREES;
+  return col<degs.length ? degs[col] : null;
+}
+
+let kbdOn=false, activeCode=null;
+const kbToggle=document.getElementById('kbToggle');
+const vkbd=document.getElementById('vkbd');
+
+function setKbd(on){
+  kbdOn=on;
+  kbToggle.classList.toggle('on', on);
+  vkbd.hidden = !on;                                   // 매핑 가이드 표시/숨김
+  document.body.style.paddingBottom = (on ? 240 : 150) + 'px';
+  if(!on){ lift(true); activeCode=null; }
+}
+kbToggle.addEventListener('click', ()=> setKbd(!kbdOn));
+
+// ---- 물리(블루투스) 키보드 연주 ----
+window.addEventListener('keydown', e=>{
+  if(!kbdOn) return;
+  const tag=(e.target.tagName||'').toLowerCase();
+  if(tag==='select'||tag==='input'||tag==='textarea') return;  // 폼 입력 중엔 무시
+  const code=e.code;
+  if(code==='ArrowLeft'||code==='ArrowRight'||code==='ArrowUp'||code==='ArrowDown'){
+    e.preventDefault();
+    if(e.repeat) return;
+    if(code==='ArrowRight') setInversion(inversion+1);
+    else if(code==='ArrowLeft') setInversion(inversion-1);
+    else if(code==='ArrowUp') setOctave(octaveShift+1);
+    else if(code==='ArrowDown') setOctave(octaveShift-1);
+    return;
+  }
+  const t=keyTarget(code); if(!t) return;
+  e.preventDefault();
+  if(e.repeat) return;
+  const d=degForCol(t.idx); if(d==null) return;
+  const slot=slotFor(t.row, e.shiftKey, e.ctrlKey||e.metaKey);
+  if(!rowData(d)[slot]) return;
+  activeCode=e.code;
+  press(d, slot);
+});
+window.addEventListener('keyup', e=>{
+  if(!kbdOn) return;
+  if(e.code===activeCode){ lift(false); activeCode=null; }
+});
+
+render();
+updateBar();
+syncInv();
+setInvEnabled();
+
+</script>
+</body>
+</html>
