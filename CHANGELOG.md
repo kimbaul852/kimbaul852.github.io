@@ -3,6 +3,11 @@
 KEYS — 키보드 피아노의 업데이트 기록입니다. / Update history for KEYS — Keyboard Piano.
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/)를 따릅니다. / Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [20] - 2026-06-02
+### 수정 / Fixed
+- 🎵 코드 모드에서 악보보기를 켜면 키보드 연주가 끊기던 문제 — 악보보기 시 코드 iframe을 숨기지 않고 **상단 악보 / 하단 코드앱 분할**로 유지하고, 토글 시 iframe에 자동 포커스해 키보드 연주가 계속되도록 수정
+  Sheet view cutting off keyboard play in chord mode — sheet now **splits (sheet on top, chord app below)** instead of hiding the iframe, and refocuses the iframe on toggle so playing continues
+
 ## [19] - 2026-06-02
 ### 추가 / Added
 - 🎵 **러닝 코드 모드(Chord Navigator)** — 앱바의 🎹/🎵 토글로 피아노 모드와 전환. ii–V–I 진행·차용·전위를 청음 학습하는 별도 앱을 격리된 iframe(`chord.html`)으로 탑재. 앱바(악보보기·설정·키보드)는 유지, 모드 선택은 자동 저장

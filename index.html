@@ -102,6 +102,11 @@
   body[data-app="chord"] .transport,
   body[data-app="chord"] #armBtn { display: none !important; }
   body[data-view="sheet"] .chordview { display: none !important; }
+  /* chord mode + sheet: split view — sheet on top, chord app STAYS active below
+     (so keyboard play keeps working; a hidden iframe would lose focus) */
+  body[data-app="chord"][data-view="sheet"] .chordview { display: block !important; order: 2; }
+  body[data-app="chord"][data-view="sheet"] .sheet { flex: 0 0 auto; max-height: 44vh; }
+  body[data-app="chord"][data-view="sheet"] .sheetview { max-height: calc(44vh - 58px); }
   .iconbtn {
     width: 42px; height: 42px; border-radius: 12px; cursor: pointer; flex: none;
     background: var(--panel); border: 1px solid rgba(255,255,255,0.08);
@@ -1980,7 +1985,13 @@
     else document.body.removeAttribute('data-view');
     updateSheetBtn();
   }
-  function toggleSheet() { sheet.on = !sheet.on; applySheetView(); saveSheet(); refocusIfEnabled(); }
+  function toggleSheet() {
+    sheet.on = !sheet.on; applySheetView(); saveSheet();
+    // in chord mode the app lives in the iframe — keep it focused so the
+    // hardware keyboard keeps playing even with the sheet open
+    if (appMode === 'chord') { try { chordFrame.contentWindow.focus(); } catch (e) {} }
+    else refocusIfEnabled();
+  }
   function renderSheet() {
     if (sheet.src) {
       sheetImg.src = sheet.src; sheetImg.style.display = 'block';
